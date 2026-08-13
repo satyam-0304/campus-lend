@@ -1,1 +1,1 @@
-# campus-lend
+# campusLend
