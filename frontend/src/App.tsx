@@ -464,27 +464,7 @@ function AddItem({ ownerId, ownerProfile, onDone, showToast }: { ownerId: string
       return;
     }
 
-    // Fallback demo local insert
-    const stored = getStoredItems();
-    const newItem: EquipmentWithOwner = {
-      equipment_id: `eq-${Date.now()}`,
-      equipment_name: name,
-      category,
-      status: 'available',
-      owner_id: ownerId,
-      image_url: null,
-      created_at: new Date().toISOString(),
-      owner: {
-        id: ownerId,
-        full_name: ownerProfile.full_name,
-        room_number: ownerProfile.room_number,
-        phone_number: ownerProfile.phone_number,
-      },
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY_ITEMS, JSON.stringify([newItem, ...stored]));
-    setLoading(false);
-    showToast('Item added to the campus library (Demo Mode)');
-    onDone();
+
   };
 
   return (
