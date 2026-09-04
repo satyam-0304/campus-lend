@@ -39,112 +39,7 @@ const categoryLabels: Record<Category, string> = {
   event_wear: 'Event wear',
 };
 
-// Initial local storage helpers for offline/demo mode testing
-const LOCAL_STORAGE_KEY_SESSION = 'campuslend_demo_session';
-const LOCAL_STORAGE_KEY_ITEMS = 'campuslend_demo_items';
-const LOCAL_STORAGE_KEY_REQUESTS = 'campuslend_demo_requests';
-const LOCAL_STORAGE_KEY_PROFILE = 'campuslend_demo_profile';
 
-const INITIAL_DEMO_ITEMS: EquipmentWithOwner[] = [
-  {
-    equipment_id: 'eq-1',
-    equipment_name: 'TI-84 Plus Scientific Calculator',
-    category: 'academics',
-    status: 'available',
-    owner_id: 'user-2',
-    image_url: null,
-    created_at: new Date().toISOString(),
-    owner: { id: 'user-2', full_name: 'Priya Sharma', room_number: '302-A', phone_number: '+91 98111 22334' },
-  },
-  {
-    equipment_id: 'eq-2',
-    equipment_name: 'Yonex Badminton Racket Set',
-    category: 'sports',
-    status: 'available',
-    owner_id: 'user-3',
-    image_url: null,
-    created_at: new Date().toISOString(),
-    owner: { id: 'user-3', full_name: 'Rohan Verma', room_number: '105-C', phone_number: '+91 98222 33445' },
-  },
-  {
-    equipment_id: 'eq-3',
-    equipment_name: 'USB-C Multiport Adapter Hub',
-    category: 'electronics',
-    status: 'available',
-    owner_id: 'user-4',
-    image_url: null,
-    created_at: new Date().toISOString(),
-    owner: { id: 'user-4', full_name: 'Ananya Gupta', room_number: '412-B', phone_number: '+91 98333 44556' },
-  },
-  {
-    equipment_id: 'eq-4',
-    equipment_name: 'Black Formal Blazer (Size M)',
-    category: 'event_wear',
-    status: 'available',
-    owner_id: 'user-5',
-    image_url: null,
-    created_at: new Date().toISOString(),
-    owner: { id: 'user-5', full_name: 'Karan Patel', room_number: '201-A', phone_number: '+91 98444 55667' },
-  },
-];
-
-const INITIAL_DEMO_REQUESTS: BorrowRequestWithDetails[] = [
-  {
-    request_id: 'req-1',
-    equipment_id: 'eq-1',
-    borrower_id: 'user-demo-1',
-    owner_id: 'user-2',
-    status: 'pending',
-    created_at: new Date().toISOString(),
-    equipment: { equipment_name: 'TI-84 Plus Scientific Calculator' },
-    borrower: { id: 'user-demo-1', full_name: 'John Doe', room_number: '204-B', phone_number: '+91 98765 43210' },
-    owner: { id: 'user-2', full_name: 'Priya Sharma', room_number: '302-A', phone_number: '+91 98111 22334' },
-  },
-  {
-    request_id: 'req-2',
-    equipment_id: 'eq-99',
-    borrower_id: 'user-3',
-    owner_id: 'user-demo-1',
-    status: 'pending',
-    created_at: new Date().toISOString(),
-    equipment: { equipment_name: 'Sony Noise-Canceling Headphones' },
-    borrower: { id: 'user-3', full_name: 'Rohan Verma', room_number: '105-C', phone_number: '+91 98222 33445' },
-    owner: { id: 'user-demo-1', full_name: 'John Doe', room_number: '204-B', phone_number: '+91 98765 43210' },
-  },
-];
-
-function getStoredItems(): EquipmentWithOwner[] {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY_ITEMS);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  localStorage.setItem(LOCAL_STORAGE_KEY_ITEMS, JSON.stringify(INITIAL_DEMO_ITEMS));
-  return INITIAL_DEMO_ITEMS;
-}
-
-function getStoredRequests(): BorrowRequestWithDetails[] {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY_REQUESTS);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  localStorage.setItem(LOCAL_STORAGE_KEY_REQUESTS, JSON.stringify(INITIAL_DEMO_REQUESTS));
-  return INITIAL_DEMO_REQUESTS;
-}
-
-function getStoredProfile(userId: string): Profile {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILE);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  const defaultProf: Profile = {
-    id: userId,
-    full_name: 'John Doe',
-    room_number: '204-B',
-    phone_number: '+91 98765 43210',
-  };
-  localStorage.setItem(LOCAL_STORAGE_KEY_PROFILE, JSON.stringify(defaultProf));
-  return defaultProf;
-}
 
 function App() {
   const [ready, setReady] = useState(false);
@@ -165,25 +60,16 @@ function App() {
         const { data } = await supabase.auth.getSession();
         if (data?.session && isMounted) {
           setSession(data.session);
-          setReady(true);
-          return;
         }
       } catch {
-        /* Supabase error / offline mode */
+        /* getSession failed — session stays null, user sees login screen */
       }
-      
-      // Fallback check demo session in localStorage
-      try {
-        const demo = localStorage.getItem(LOCAL_STORAGE_KEY_SESSION);
-        if (demo && isMounted) {
-          setSession(JSON.parse(demo));
-        }
-      } catch { /* ignore */ }
       if (isMounted) setReady(true);
     })();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (newSession) setSession(newSession);
+      else setSession(null);
     });
 
     return () => listener.subscription.unsubscribe();
@@ -197,41 +83,17 @@ function App() {
     (async () => {
       try {
         const data = await api.getMyProfile();
-        if (data) {
-          setProfile(data);
-          return;
-        }
-      } catch { /* fallback to local demo profile */ }
-
-      setProfile(getStoredProfile(session.user.id));
+        setProfile(data);
+      } catch {
+        /* Profile fetch failed — stays null, ProfileSetup screen will show */
+      }
     })();
   }, [session]);
-
-  const handleDemoAuth = (fullName: string, email: string) => {
-    const demoSession = {
-      user: {
-        id: 'user-demo-1',
-        email: email || 'john@gmail.com',
-        user_metadata: { full_name: fullName || 'John Doe' },
-      },
-    };
-    const demoProf: Profile = {
-      id: 'user-demo-1',
-      full_name: fullName || 'John Doe',
-      room_number: '204-B',
-      phone_number: '+91 98765 43210',
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY_SESSION, JSON.stringify(demoSession));
-    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILE, JSON.stringify(demoProf));
-    setSession(demoSession);
-    setProfile(demoProf);
-  };
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
     } catch { /* ignore */ }
-    localStorage.removeItem(LOCAL_STORAGE_KEY_SESSION);
     setSession(null);
     setProfile(null);
   };
@@ -245,11 +107,11 @@ function App() {
   }
 
   if (!session || !session.user) {
-    return <AuthScreen onSuccess={showToast} onDemoAuth={handleDemoAuth} />;
+    return <AuthScreen onSuccess={showToast} />;
   }
 
   if (!profile) {
-    return <ProfileSetup userId={session.user.id} onDone={setProfile} />;
+    return <ProfileSetup initialName={session.user.user_metadata?.full_name || ''} onDone={setProfile} />;
   }
 
   return (
@@ -278,7 +140,7 @@ function App() {
 
 // ── Auth ───────────────────────────────────────────────────
 
-function AuthScreen({ onSuccess, onDemoAuth }: { onSuccess: (msg: string) => void; onDemoAuth: (name: string, email: string) => void }) {
+function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -300,13 +162,6 @@ function AuthScreen({ onSuccess, onDemoAuth }: { onSuccess: (msg: string) => voi
         });
 
         if (signUpError) {
-          // If backend connection fails, automatically fall back to local auth with entered data
-          if (signUpError.message?.includes('fetch') || signUpError.message?.includes('NetworkError') || signUpError.message?.includes('Failed')) {
-            onDemoAuth(name || 'John Doe', email || 'john@gmail.com');
-            onSuccess('Account created — welcome to CampusLend');
-            setLoading(false);
-            return;
-          }
           setError(signUpError.message);
           setLoading(false);
           return;
@@ -315,31 +170,19 @@ function AuthScreen({ onSuccess, onDemoAuth }: { onSuccess: (msg: string) => voi
         if (data?.user) {
           onSuccess('Account created — welcome to CampusLend');
         } else {
-          // Supabase offline fallback
-          onDemoAuth(name || 'John Doe', email || 'john@gmail.com');
-          onSuccess('Account created — welcome to CampusLend');
+          setError('Signup failed. Please try again.');
         }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) {
-          if (signInError.message?.includes('fetch') || signInError.message?.includes('NetworkError') || signInError.message?.includes('Failed')) {
-            const fallbackName = name || (email ? email.split('@')[0] : 'John Doe');
-            onDemoAuth(fallbackName, email || 'john@gmail.com');
-            onSuccess('Logged in');
-            setLoading(false);
-            return;
-          }
           setError(signInError.message);
           setLoading(false);
           return;
         }
         onSuccess('Logged in');
       }
-    } catch {
-      // Fallback for network error / placeholder URL
-      const fallbackName = name || (email ? email.split('@')[0] : 'John Doe');
-      onDemoAuth(fallbackName, email || 'john@gmail.com');
-      onSuccess(mode === 'signup' ? 'Account created — welcome to CampusLend' : 'Logged in');
+    } catch (err: any) {
+      setError(err?.message || 'Network error — please check your connection and try again.');
     }
     setLoading(false);
   };
@@ -379,10 +222,10 @@ function AuthScreen({ onSuccess, onDemoAuth }: { onSuccess: (msg: string) => voi
   );
 }
 
-function ProfileSetup({ userId, onDone }: { userId: string; onDone: (p: Profile) => void }) {
-  const [fullName, setFullName] = useState('John Doe');
-  const [room, setRoom] = useState('204-B');
-  const [phone, setPhone] = useState('+91 98765 43210');
+function ProfileSetup({ initialName, onDone }: { initialName: string; onDone: (p: Profile) => void }) {
+  const [fullName, setFullName] = useState(initialName);
+  const [room, setRoom] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -392,18 +235,12 @@ function ProfileSetup({ userId, onDone }: { userId: string; onDone: (p: Profile)
     setLoading(true);
     try {
       const data = await api.updateMyProfile({ full_name: fullName, room_number: room, phone_number: phone });
-      if (data) {
-        setLoading(false);
-        onDone(data);
-        return;
-      }
-    } catch { /* ignore fallback */ }
-    
-    // Local demo fallback
-    setLoading(false);
-    const localProf: Profile = { id: userId, full_name: fullName, room_number: room, phone_number: phone };
-    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILE, JSON.stringify(localProf));
-    onDone(localProf);
+      setLoading(false);
+      onDone(data);
+    } catch (err: any) {
+      setError(err?.message || 'Could not save profile. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -491,32 +328,23 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
   const loadItems = useCallback(async () => {
     try {
       const data = await api.getEquipment();
-      if (data) {
-        setItems(data);
-        setLoading(false);
-        return;
-      }
-    } catch { /* fallback to local items */ }
-
-    setItems(getStoredItems());
-    setLoading(false);
+      setItems(data);
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const loadMyRequests = useCallback(async () => {
     try {
       const { borrowed } = await api.getDashboard();
-      if (borrowed) {
-        const map: Record<string, RequestStatus> = {};
-        borrowed.forEach((r) => { map[r.equipment_id] = r.status; });
-        setMyRequests(map);
-        return;
-      }
-    } catch { /* fallback */ }
-
-    const localReqs = getStoredRequests();
-    const map: Record<string, RequestStatus> = {};
-    localReqs.filter((r) => r.borrower_id === userId).forEach((r) => { map[r.equipment_id] = r.status; });
-    setMyRequests(map);
+      const map: Record<string, RequestStatus> = {};
+      borrowed.forEach((r) => { map[r.equipment_id] = r.status; });
+      setMyRequests(map);
+    } catch {
+      /* Not critical — request status map stays empty */
+    }
   }, [userId]);
 
   useEffect(() => { loadItems(); loadMyRequests(); }, [loadItems, loadMyRequests]);
@@ -531,30 +359,9 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
       await api.createRequest({ equipment_id: item.equipment_id, owner_id: item.owner_id });
       setMyRequests((prev) => ({ ...prev, [item.equipment_id]: 'pending' }));
       showToast('Request sent to the owner');
-      return;
     } catch (err: any) {
-      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed')) {
-        showToast(err.message);
-        return;
-      }
+      showToast(err?.message || 'Could not send request. Please try again.');
     }
-
-    // Fallback demo request
-    const existing = getStoredRequests();
-    const newReq: BorrowRequestWithDetails = {
-      request_id: `req-${Date.now()}`,
-      equipment_id: item.equipment_id,
-      borrower_id: userId,
-      owner_id: item.owner_id,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      equipment: { equipment_name: item.equipment_name },
-      borrower: { id: userId, full_name: profile.full_name, room_number: profile.room_number, phone_number: profile.phone_number },
-      owner: item.owner,
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY_REQUESTS, JSON.stringify([newReq, ...existing]));
-    setMyRequests((prev) => ({ ...prev, [item.equipment_id]: 'pending' }));
-    showToast('Request sent to the owner (Demo Mode)');
   };
 
   if (loading) return <CenteredSpinner />;
@@ -723,15 +530,12 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
       const { borrowed, lending } = await api.getDashboard();
       setOutgoing(borrowed || []);
       setIncoming(lending || []);
+    } catch {
+      setOutgoing([]);
+      setIncoming([]);
+    } finally {
       setLoading(false);
-      return;
-    } catch { /* fallback */ }
-
-    // Fallback local demo requests
-    const all = getStoredRequests();
-    setOutgoing(all.filter((r) => r.borrower_id === userId));
-    setIncoming(all.filter((r) => r.owner_id === userId));
-    setLoading(false);
+    }
   }, [userId]);
 
   useEffect(() => { load(); }, [load]);
@@ -741,20 +545,9 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
       await api.updateRequestStatus(requestId, status);
       setIncoming((prev) => prev.map((r) => r.request_id === requestId ? { ...r, status } : r));
       showToast(status === 'approved' ? 'Request approved' : 'Request declined');
-      return;
     } catch (err: any) {
-      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed')) {
-        showToast(err.message);
-        return;
-      }
+      showToast(err?.message || 'Could not update request. Please try again.');
     }
-
-    // Fallback local update
-    const all = getStoredRequests();
-    const updated = all.map((r) => r.request_id === requestId ? { ...r, status } : r);
-    localStorage.setItem(LOCAL_STORAGE_KEY_REQUESTS, JSON.stringify(updated));
-    setIncoming((prev) => prev.map((r) => r.request_id === requestId ? { ...r, status } : r));
-    showToast(status === 'approved' ? 'Request approved (Demo Mode)' : 'Request declined (Demo Mode)');
   };
 
   if (loading) return <CenteredSpinner />;
@@ -840,26 +633,13 @@ function ProfilePage({ profile, setProfile, showToast }: { profile: Profile; set
     setSaving(true);
     try {
       const data = await api.updateMyProfile({ full_name: fullName, room_number: room, phone_number: phone });
-      if (data) {
-        setSaving(false);
-        setProfile(data);
-        showToast('Profile changes saved');
-        return;
-      }
+      setProfile(data);
+      showToast('Profile changes saved');
     } catch (err: any) {
-      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed')) {
-        showToast(err.message);
-        setSaving(false);
-        return;
-      }
+      showToast(err?.message || 'Could not save profile. Please try again.');
+    } finally {
+      setSaving(false);
     }
-
-    // Fallback demo local save
-    const updated: Profile = { ...profile, full_name: fullName, room_number: room, phone_number: phone };
-    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILE, JSON.stringify(updated));
-    setSaving(false);
-    setProfile(updated);
-    showToast('Profile changes saved');
   };
 
   return (
