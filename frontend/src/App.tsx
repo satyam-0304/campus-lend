@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import type {
   BorrowRequestWithDetails,
   Category,
@@ -195,13 +196,9 @@ function App() {
     }
     (async () => {
       try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id, full_name, room_number, phone_number')
-          .eq('id', session.user.id)
-          .maybeSingle();
+        const data = await api.getMyProfile();
         if (data) {
-          setProfile(data as Profile);
+          setProfile(data);
           return;
         }
       } catch { /* fallback to local demo profile */ }
@@ -316,12 +313,6 @@ function AuthScreen({ onSuccess, onDemoAuth }: { onSuccess: (msg: string) => voi
         }
 
         if (data?.user) {
-          await supabase.from('profiles').insert({
-            id: data.user.id,
-            full_name: name,
-            room_number: '',
-            phone_number: '',
-          });
           onSuccess('Account created — welcome to CampusLend');
         } else {
           // Supabase offline fallback
@@ -400,14 +391,10 @@ function ProfileSetup({ userId, onDone }: { userId: string; onDone: (p: Profile)
     setError('');
     setLoading(true);
     try {
-      const { data, error: upsertError } = await supabase
-        .from('profiles')
-        .upsert({ id: userId, full_name: fullName, room_number: room, phone_number: phone })
-        .select('id, full_name, room_number, phone_number')
-        .maybeSingle();
-      if (!upsertError && data) {
+      const data = await api.updateMyProfile({ full_name: fullName, room_number: room, phone_number: phone });
+      if (data) {
         setLoading(false);
-        onDone(data as Profile);
+        onDone(data);
         return;
       }
     } catch { /* ignore fallback */ }
@@ -503,12 +490,9 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
 
   const loadItems = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('equipment')
-        .select('equipment_id, equipment_name, category, status, owner_id, image_url, created_at, owner:id!inner(id, full_name, room_number, phone_number)')
-        .order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
-        setItems(data as unknown as EquipmentWithOwner[]);
+      const data = await api.getEquipment();
+      if (data) {
+        setItems(data);
         setLoading(false);
         return;
       }
@@ -520,13 +504,10 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
 
   const loadMyRequests = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('borrow_requests')
-        .select('equipment_id, status')
-        .eq('borrower_id', userId);
-      if (!error && data) {
+      const { borrowed } = await api.getDashboard();
+      if (borrowed) {
         const map: Record<string, RequestStatus> = {};
-        data.forEach((r) => { map[r.equipment_id] = r.status as RequestStatus; });
+        borrowed.forEach((r) => { map[r.equipment_id] = r.status; });
         setMyRequests(map);
         return;
       }
@@ -547,15 +528,16 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
 
   const handleRequest = async (item: EquipmentWithOwner) => {
     try {
-      const { error } = await supabase
-        .from('borrow_requests')
-        .insert({ equipment_id: item.equipment_id, owner_id: item.owner_id, borrower_id: userId, status: 'pending' });
-      if (!error) {
-        setMyRequests((prev) => ({ ...prev, [item.equipment_id]: 'pending' }));
-        showToast('Request sent to the owner');
+      await api.createRequest({ equipment_id: item.equipment_id, owner_id: item.owner_id });
+      setMyRequests((prev) => ({ ...prev, [item.equipment_id]: 'pending' }));
+      showToast('Request sent to the owner');
+      return;
+    } catch (err: any) {
+      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed')) {
+        showToast(err.message);
         return;
       }
-    } catch { /* fallback local insert */ }
+    }
 
     // Fallback demo request
     const existing = getStoredRequests();
@@ -663,16 +645,17 @@ function AddItem({ ownerId, ownerProfile, onDone, showToast }: { ownerId: string
     setLoading(true);
 
     try {
-      const { error: insertError } = await supabase
-        .from('equipment')
-        .insert({ equipment_name: name, category, status: 'available', owner_id: ownerId });
-      if (!insertError) {
-        setLoading(false);
-        showToast('Item added to the campus library');
-        onDone();
-        return;
-      }
-    } catch { /* ignore fallback */ }
+      await api.createEquipment({ equipment_name: name, category, image_url: null });
+      setLoading(false);
+      showToast('Item added to the campus library');
+      onDone();
+      return;
+    } catch (err: any) {
+      console.error('Failed to add equipment via API:', err);
+      setError(err?.message || 'Failed to add item. Please ensure you are logged in.');
+      setLoading(false);
+      return;
+    }
 
     // Fallback demo local insert
     const stored = getStoredItems();
@@ -737,24 +720,11 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
 
   const load = useCallback(async () => {
     try {
-      const [out, inc] = await Promise.all([
-        supabase
-          .from('borrow_requests')
-          .select('request_id, equipment_id, borrower_id, owner_id, status, created_at, equipment:equipment_id(equipment_name), borrower:borrower_id(id, full_name, room_number, phone_number), owner:owner_id(id, full_name, room_number, phone_number)')
-          .eq('borrower_id', userId)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('borrow_requests')
-          .select('request_id, equipment_id, borrower_id, owner_id, status, created_at, equipment:equipment_id(equipment_name), borrower:borrower_id(id, full_name, room_number, phone_number), owner:owner_id(id, full_name, room_number, phone_number)')
-          .eq('owner_id', userId)
-          .order('created_at', { ascending: false }),
-      ]);
-      if (!out.error && !inc.error && (out.data || inc.data)) {
-        setOutgoing((out.data ?? []) as unknown as BorrowRequestWithDetails[]);
-        setIncoming((inc.data ?? []) as unknown as BorrowRequestWithDetails[]);
-        setLoading(false);
-        return;
-      }
+      const { borrowed, lending } = await api.getDashboard();
+      setOutgoing(borrowed || []);
+      setIncoming(lending || []);
+      setLoading(false);
+      return;
     } catch { /* fallback */ }
 
     // Fallback local demo requests
@@ -768,13 +738,16 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
 
   const handleUpdate = async (requestId: string, status: RequestStatus) => {
     try {
-      const { error } = await supabase.from('borrow_requests').update({ status }).eq('request_id', requestId);
-      if (!error) {
-        setIncoming((prev) => prev.map((r) => r.request_id === requestId ? { ...r, status } : r));
-        showToast(status === 'approved' ? 'Request approved' : 'Request declined');
+      await api.updateRequestStatus(requestId, status);
+      setIncoming((prev) => prev.map((r) => r.request_id === requestId ? { ...r, status } : r));
+      showToast(status === 'approved' ? 'Request approved' : 'Request declined');
+      return;
+    } catch (err: any) {
+      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed')) {
+        showToast(err.message);
         return;
       }
-    } catch { /* fallback */ }
+    }
 
     // Fallback local update
     const all = getStoredRequests();
@@ -866,19 +839,20 @@ function ProfilePage({ profile, setProfile, showToast }: { profile: Profile; set
   const save = async () => {
     setSaving(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ full_name: fullName, room_number: room, phone_number: phone })
-        .eq('id', profile.id)
-        .select('id, full_name, room_number, phone_number')
-        .maybeSingle();
-      if (!error && data) {
+      const data = await api.updateMyProfile({ full_name: fullName, room_number: room, phone_number: phone });
+      if (data) {
         setSaving(false);
-        setProfile(data as Profile);
+        setProfile(data);
         showToast('Profile changes saved');
         return;
       }
-    } catch { /* fallback */ }
+    } catch (err: any) {
+      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed')) {
+        showToast(err.message);
+        setSaving(false);
+        return;
+      }
+    }
 
     // Fallback demo local save
     const updated: Profile = { ...profile, full_name: fullName, room_number: room, phone_number: phone };

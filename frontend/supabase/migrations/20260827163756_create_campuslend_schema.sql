@@ -64,111 +64,114 @@ because CampusLend has a sign-in screen.
 4. No `DROP` or destructive operations — safe to re-run (idempotent with IF NOT EXISTS).
 */
 
--- ── profiles ──────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS profiles (
-  id          uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name   text NOT NULL DEFAULT '',
-  room_number text NOT NULL DEFAULT '',
+-- 1. Reset existing tables and functions cleanly
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user();
+DROP TABLE IF EXISTS public.borrow_requests CASCADE;
+DROP TABLE IF EXISTS public.equipment CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+
+-- 2. Profiles Table (Holds non-sensitive public campus details; auth.users manages email and password)
+CREATE TABLE public.profiles (
+  id           uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name    text NOT NULL DEFAULT '',
+  room_number  text NOT NULL DEFAULT '',
   phone_number text NOT NULL DEFAULT '',
-  created_at  timestamptz NOT NULL DEFAULT now()
+  created_at   timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "profiles_select_all" ON profiles;
-CREATE POLICY "profiles_select_all"
-  ON profiles FOR SELECT
-  TO authenticated
-  USING (true);
-
-DROP POLICY IF EXISTS "profiles_insert_own" ON profiles;
-CREATE POLICY "profiles_insert_own"
-  ON profiles FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = id);
-
-DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
-CREATE POLICY "profiles_update_own"
-  ON profiles FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
-
--- ── equipment ─────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS equipment (
+-- 3. Equipment Table
+CREATE TABLE public.equipment (
   equipment_id   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   equipment_name text NOT NULL,
   category       text NOT NULL DEFAULT 'academics'
-                   CHECK (category IN ('academics', 'electronics', 'sports', 'event_wear')),
+                 CHECK (category IN ('academics', 'electronics', 'sports', 'event_wear')),
   status         text NOT NULL DEFAULT 'available'
-                   CHECK (status IN ('available', 'borrowed')),
-  owner_id       uuid NOT NULL DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
+                 CHECK (status IN ('available', 'borrowed')),
+  owner_id       uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   image_url      text,
   created_at     timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "equipment_select_all" ON equipment;
-CREATE POLICY "equipment_select_all"
-  ON equipment FOR SELECT
-  TO authenticated
-  USING (true);
-
-DROP POLICY IF EXISTS "equipment_insert_own" ON equipment;
-CREATE POLICY "equipment_insert_own"
-  ON equipment FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = owner_id);
-
-DROP POLICY IF EXISTS "equipment_update_own" ON equipment;
-CREATE POLICY "equipment_update_own"
-  ON equipment FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = owner_id)
-  WITH CHECK (auth.uid() = owner_id);
-
-DROP POLICY IF EXISTS "equipment_delete_own" ON equipment;
-CREATE POLICY "equipment_delete_own"
-  ON equipment FOR DELETE
-  TO authenticated
-  USING (auth.uid() = owner_id);
-
--- ── borrow_requests ───────────────────────────────────────
-CREATE TABLE IF NOT EXISTS borrow_requests (
+-- 4. Borrow Requests Table
+CREATE TABLE public.borrow_requests (
   request_id   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  equipment_id uuid NOT NULL REFERENCES equipment(equipment_id) ON DELETE CASCADE,
-  borrower_id  uuid NOT NULL DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
-  owner_id     uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  equipment_id uuid NOT NULL REFERENCES public.equipment(equipment_id) ON DELETE CASCADE,
+  borrower_id  uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  owner_id     uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   status       text NOT NULL DEFAULT 'pending'
-                 CHECK (status IN ('pending', 'approved', 'rejected')),
+               CHECK (status IN ('pending', 'approved', 'rejected')),
   created_at   timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE borrow_requests ENABLE ROW LEVEL SECURITY;
+-- 5. Performance Indexes
+CREATE INDEX idx_equipment_owner ON public.equipment(owner_id);
+CREATE INDEX idx_equipment_category ON public.equipment(category);
+CREATE INDEX idx_borrow_requests_borrower ON public.borrow_requests(borrower_id);
+CREATE INDEX idx_borrow_requests_owner ON public.borrow_requests(owner_id);
+CREATE INDEX idx_borrow_requests_equipment ON public.borrow_requests(equipment_id);
 
-DROP POLICY IF EXISTS "borrow_requests_select_involved" ON borrow_requests;
-CREATE POLICY "borrow_requests_select_involved"
-  ON borrow_requests FOR SELECT
+-- 6. Row Level Security (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.equipment ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.borrow_requests ENABLE ROW LEVEL SECURITY;
+
+-- Profiles Policies
+CREATE POLICY "profiles_select_all"
+  ON public.profiles FOR SELECT
   TO authenticated
-  USING (auth.uid() = borrower_id OR auth.uid() = owner_id);
+  USING (true);
 
-DROP POLICY IF EXISTS "borrow_requests_insert_borrower" ON borrow_requests;
-CREATE POLICY "borrow_requests_insert_borrower"
-  ON borrow_requests FOR INSERT
+CREATE POLICY "profiles_update_own"
+  ON public.profiles FOR UPDATE
   TO authenticated
-  WITH CHECK (auth.uid() = borrower_id);
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
-DROP POLICY IF EXISTS "borrow_requests_update_owner" ON borrow_requests;
-CREATE POLICY "borrow_requests_update_owner"
-  ON borrow_requests FOR UPDATE
+-- Equipment Policies
+CREATE POLICY "equipment_select_all"
+  ON public.equipment FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "equipment_insert_own"
+  ON public.equipment FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = owner_id);
+
+CREATE POLICY "equipment_update_own"
+  ON public.equipment FOR UPDATE
   TO authenticated
   USING (auth.uid() = owner_id)
   WITH CHECK (auth.uid() = owner_id);
 
--- ── indexes ───────────────────────────────────────────────
-CREATE INDEX IF NOT EXISTS idx_equipment_owner ON equipment(owner_id);
-CREATE INDEX IF NOT EXISTS idx_equipment_category ON equipment(category);
-CREATE INDEX IF NOT EXISTS idx_borrow_requests_borrower ON borrow_requests(borrower_id);
-CREATE INDEX IF NOT EXISTS idx_borrow_requests_owner ON borrow_requests(owner_id);
-CREATE INDEX IF NOT EXISTS idx_borrow_requests_equipment ON borrow_requests(equipment_id);
+CREATE POLICY "equipment_delete_own"
+  ON public.equipment FOR DELETE
+  TO authenticated
+  USING (auth.uid() = owner_id);
+
+-- Borrow Requests Policies
+CREATE POLICY "borrow_requests_select_involved"
+  ON public.borrow_requests FOR SELECT
+  TO authenticated
+  USING (auth.uid() = borrower_id OR auth.uid() = owner_id);
+
+CREATE POLICY "borrow_requests_insert_borrower"
+  ON public.borrow_requests FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = borrower_id);
+
+CREATE POLICY "borrow_requests_update_owner"
+  ON public.borrow_requests FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = owner_id)
+  WITH CHECK (auth.uid() = owner_id);
+
+-- 7. Automatic Profile Creation Trigger
+-- Eliminates manual profile insertions during signup and prevents missing-column errors entirely.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$ BEGIN   INSERT INTO public.profiles (id, full_name, room_number, phone_number)   VALUES (     new.id,     COALESCE(new.raw_user_meta_data->>'full_name', ''),     COALESCE(new.raw_user_meta_data->>'room_number', ''),     COALESCE(new.raw_user_meta_data->>'phone_number', '')   );   RETURN new; END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
