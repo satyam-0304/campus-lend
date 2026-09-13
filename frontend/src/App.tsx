@@ -312,11 +312,11 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
     { id: 'dashboard', label: 'Dashboard', icon: FileText },
   ];
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
-        <button onClick={() => setPage('explore')} className="flex items-center gap-3">
-          <div className="h-9 w-9 overflow-hidden rounded-xl bg-sky-50 ring-1 ring-sky-100"><img src="/assets/images/logo.jpeg" alt="" className="h-full w-full object-cover" /></div>
-          <span className="text-lg font-extrabold tracking-tight">Campus<span className="text-sky-600">Lend</span></span>
+    <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/90 backdrop-blur-lg shadow-sm">
+      <div className="mx-auto flex h-20 max-w-[1360px] items-center justify-between px-6 sm:px-10 lg:px-12">
+        <button onClick={() => setPage('explore')} className="flex items-center gap-3.5 shrink-0">
+          <div className="h-10 w-10 overflow-hidden rounded-2xl bg-sky-50 ring-1 ring-slate-200/80"><img src="/assets/images/logo.jpeg" alt="" className="h-full w-full object-cover" /></div>
+          <span className="text-xl font-extrabold tracking-tight">Campus<span className="text-sky-600">Lend</span></span>
         </button>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map(({ id, label, icon: Icon }) => (
