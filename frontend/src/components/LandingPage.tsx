@@ -349,10 +349,6 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                   <GraduationCap size={18} className="text-sky-500" />
                   <span>On-Campus Handshake</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Coins size={18} className="text-amber-500" />
-                  <span>Zero Commission</span>
-                </div>
               </div>
             </div>
 
