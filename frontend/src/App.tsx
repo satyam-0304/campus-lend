@@ -47,6 +47,13 @@ function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [page, setPage] = useState<Page>('explore');
   const [toast, setToast] = useState<string | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+  const openAuth = (mode: 'login' | 'signup') => {
+    setAuthMode(mode);
+    setAuthModalOpen(true);
+  };
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -62,7 +69,7 @@ function App() {
           setSession(data.session);
         }
       } catch {
-        /* getSession failed — session stays null, user sees login screen */
+        /* getSession failed — session stays null, user sees landing page */
       }
       if (isMounted) setReady(true);
     })();
@@ -107,7 +114,26 @@ function App() {
   }
 
   if (!session || !session.user) {
-    return <AuthScreen onSuccess={showToast} />;
+    return (
+      <>
+        <LandingPage
+          onLogin={() => openAuth('login')}
+          onSignUp={() => openAuth('signup')}
+        />
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          initialMode={authMode}
+          onSuccess={showToast}
+        />
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-2xl">
+            <Check size={17} className="text-emerald-400" />
+            {toast}
+          </div>
+        )}
+      </>
+    );
   }
 
   if (!profile) {
