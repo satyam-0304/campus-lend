@@ -202,10 +202,6 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                   <span>100% Student Verified</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <HeartHandshake size={18} className="text-sky-500" />
-                  <span>Zero Rent Fees</span>
-                </div>
-                <div className="flex items-center gap-2">
                   <GraduationCap size={18} className="text-amber-500" />
                   <span>On-Campus Handoffs</span>
                 </div>
