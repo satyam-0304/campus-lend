@@ -29,6 +29,8 @@ import type {
   Profile,
   RequestStatus,
 } from '@/lib/types';
+import { LandingPage } from './components/LandingPage';
+import { AuthModal } from './components/AuthModal';
 
 type Page = 'explore' | 'add' | 'dashboard' | 'profile';
 
@@ -62,6 +64,10 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
+    const fallbackTimer = window.setTimeout(() => {
+      if (isMounted) setReady(true);
+    }, 1200);
+
     (async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -70,8 +76,9 @@ function App() {
         }
       } catch {
         /* getSession failed — session stays null, user sees landing page */
+      } finally {
+        if (isMounted) setReady(true);
       }
-      if (isMounted) setReady(true);
     })();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -79,7 +86,11 @@ function App() {
       else setSession(null);
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      window.clearTimeout(fallbackTimer);
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
