@@ -373,27 +373,14 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                         <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-sky-700">
                           FOR SALE
                         </span>
-                {/* Campus Exchange Summary Card */}
-                <div className="relative rounded-3xl border border-slate-200/80 bg-white p-7 shadow-2xl shadow-slate-200/60 ring-1 ring-slate-100">
-                  <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-600">
-                        <Building2 size={24} />
                       </div>
                       <h3 className="text-sm font-extrabold text-slate-900">Scientific Calculator</h3>
                       <p className="mt-0.5 text-xs text-slate-500">Casio FX-991EX</p>
-                      <div>
-                        <h3 className="text-base font-extrabold text-slate-900">Campus Marketplace</h3>
-                        <p className="text-xs text-slate-500 font-medium">Peer-to-peer student network</p>
-                      </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
                       <span className="font-extrabold text-slate-900">₹800</span>
                       <span className="flex items-center gap-1 font-bold"><Star size={12} className="fill-amber-400 text-amber-400" /> 4.9</span>
                     </div>
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-600">
-                      Active Campus
-                    </span>
                   </div>
 
                   {/* Showcase Card 2 */}
@@ -406,23 +393,14 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                         <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-700">
                           TO BORROW
                         </span>
-                  {/* Feature Pill 1: Buy & Sell */}
-                  <div className="mb-4 rounded-2xl border border-sky-100 bg-sky-50/60 p-4 transition hover:bg-sky-50">
-                    <div className="flex items-center gap-3 mb-1.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
-                        <ShoppingBag size={16} />
                       </div>
                       <h3 className="text-sm font-extrabold text-slate-900">Arduino Uno Kit</h3>
                       <p className="mt-0.5 text-xs text-slate-500">USB Cable + Sensors</p>
-                      <span className="text-sm font-extrabold text-slate-900">BUY & SELL</span>
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
                       <span className="font-extrabold text-slate-900">₹30/day</span>
                       <span className="flex items-center gap-1 font-bold"><Star size={12} className="fill-amber-400 text-amber-400" /> 5.0</span>
                     </div>
-                    <p className="text-xs text-slate-600 leading-relaxed pl-11">
-                      Textbooks, calculators, electronics & hostel essentials.
-                    </p>
                   </div>
 
                   {/* Showcase Card 3 */}
@@ -432,26 +410,17 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
                           <BookOpen size={22} />
                         </div>
-                        <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-sky-700">
+                        <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-indigo-700">
                           FOR SALE
                         </span>
-                  {/* Feature Pill 2: Borrow & Lend */}
-                  <div className="mb-6 rounded-2xl border border-amber-100 bg-amber-50/50 p-4 transition hover:bg-amber-50">
-                    <div className="flex items-center gap-3 mb-1.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
-                        <Repeat size={16} />
                       </div>
                       <h3 className="text-sm font-extrabold text-slate-900">Engineering Books</h3>
                       <p className="mt-0.5 text-xs text-slate-500">3rd Sem Bundle</p>
-                      <span className="text-sm font-extrabold text-slate-900">BORROW & LEND</span>
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
                       <span className="font-extrabold text-slate-900">₹500</span>
                       <span className="flex items-center gap-1 font-bold"><Star size={12} className="fill-amber-400 text-amber-400" /> 4.8</span>
                     </div>
-                    <p className="text-xs text-slate-600 leading-relaxed pl-11">
-                      Lab coats, project kits, sports equipment & formal wear.
-                    </p>
                   </div>
 
                   {/* Showcase Card 4 */}
@@ -461,17 +430,12 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
                           <Shirt size={22} />
                         </div>
-                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-purple-700">
+                        <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-rose-700">
                           BUY OR BORROW
                         </span>
                       </div>
                       <h3 className="text-sm font-extrabold text-slate-900">Chemistry Lab Coat</h3>
                       <p className="mt-0.5 text-xs text-slate-500">Size M · Clean</p>
-                  {/* Bottom Community Stat */}
-                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-3.5 text-xs font-semibold text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <BadgeCheck size={18} className="text-sky-600" />
-                      <span>Verified campus members only</span>
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
                       <span className="font-extrabold text-slate-900">₹400 / ₹30d</span>
@@ -480,6 +444,15 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                   </div>
 
                 </div>
+
+                {/* Bottom Community Stat */}
+                <div className="mt-6 flex items-center justify-between rounded-2xl bg-slate-50 p-4 text-xs font-semibold text-slate-600 border border-slate-200/50 mx-2">
+                  <div className="flex items-center gap-2">
+                    <BadgeCheck size={18} className="text-sky-600" />
+                    <span>Verified campus members only</span>
+                  </div>
+                </div>
+
               </div>
             </div>
 
