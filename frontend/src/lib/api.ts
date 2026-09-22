@@ -45,10 +45,17 @@ export const api = {
     return handleResponse<EquipmentWithOwner[]>(res);
   },
 
+  async getMyEquipment(): Promise<EquipmentWithOwner[]> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/equipment/mine`, { headers });
+    return handleResponse<EquipmentWithOwner[]>(res);
+  },
+
   async createEquipment(payload: {
     equipment_name: string;
     category: Category;
-    image_url?: string | null;
+    image_url: string;
+    price_note?: string | null;
   }): Promise<EquipmentWithOwner> {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_BASE_URL}/api/equipment`, {
@@ -107,6 +114,15 @@ export const api = {
       body: JSON.stringify({ status }),
     });
     return handleResponse<BorrowRequestWithDetails>(res);
+  },
+
+  async cancelRequest(requestId: string): Promise<void> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/requests/${requestId}`, {
+      method: 'DELETE',
+      headers,
+    });
+    return handleResponse<void>(res);
   },
 
   // Profiles

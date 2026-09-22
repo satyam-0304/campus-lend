@@ -16,6 +16,7 @@ export type EquipmentRow = {
   status: EquipmentStatus;
   owner_id: string;
   image_url: string | null;
+  price_note: string | null;
   created_at: string;
 };
 
