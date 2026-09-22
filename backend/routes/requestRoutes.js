@@ -136,4 +136,36 @@ router.put('/:request_id', async (req, res) => {
   res.json(data);
 });
 
+// ── DELETE /:request_id ───────────────────────────────────────
+// Protected. Borrower-only: cancel a pending borrow request.
+// Only allowed when status is 'pending' (cannot cancel approved/rejected).
+router.delete('/:request_id', async (req, res) => {
+  const { request_id } = req.params;
+
+  // Fetch request to verify borrower and status
+  const { data: request, error: fetchError } = await serviceClient
+    .from('borrow_requests')
+    .select('request_id, borrower_id, status')
+    .eq('request_id', request_id)
+    .single();
+
+  if (fetchError || !request) {
+    return res.status(404).json({ error: 'Borrow request not found' });
+  }
+  if (request.borrower_id !== req.user.id) {
+    return res.status(403).json({ error: 'Forbidden: you are not the borrower of this request' });
+  }
+  if (request.status !== 'pending') {
+    return res.status(409).json({ error: 'Only pending requests can be cancelled' });
+  }
+
+  const { error } = await serviceClient
+    .from('borrow_requests')
+    .delete()
+    .eq('request_id', request_id);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).send();
+});
+
 module.exports = router;

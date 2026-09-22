@@ -9,7 +9,7 @@ const VALID_CATEGORIES = ['academics', 'electronics', 'sports', 'event_wear'];
 
 // Reusable select string — joins owner profile via FK
 const EQUIPMENT_SELECT =
-  'equipment_id, equipment_name, category, status, owner_id, image_url, created_at, ' +
+  'equipment_id, equipment_name, category, status, owner_id, image_url, price_note, created_at, ' +
   'owner:profiles!owner_id(id, full_name, room_number, phone_number)';
 
 // ── GET / ─────────────────────────────────────────────────────
@@ -25,11 +25,25 @@ router.get('/', async (_req, res) => {
   res.json(data);
 });
 
+// ── GET /mine ─────────────────────────────────────────────────
+// Protected. Returns all equipment listed by the authenticated user (all statuses).
+router.get('/mine', authMiddleware, async (req, res) => {
+  const { data, error } = await serviceClient
+    .from('equipment')
+    .select(EQUIPMENT_SELECT)
+    .eq('owner_id', req.user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 // ── POST / ────────────────────────────────────────────────────
 // Protected. Adds a new item. owner_id is always forced to req.user.id.
-// image_url accepts a plain text URL string or null (Storage is out of scope).
+// image_url accepts a plain text URL string (required).
+// price_note is optional free-text (e.g. "₹50/day or free for friends").
 router.post('/', authMiddleware, async (req, res) => {
-  const { equipment_name, category, image_url } = req.body;
+  const { equipment_name, category, image_url, price_note } = req.body;
 
   if (!equipment_name || typeof equipment_name !== 'string' || !equipment_name.trim()) {
     return res.status(400).json({ error: 'equipment_name is required' });
@@ -39,6 +53,9 @@ router.post('/', authMiddleware, async (req, res) => {
       error: `category must be one of: ${VALID_CATEGORIES.join(', ')}`,
     });
   }
+  if (!image_url || typeof image_url !== 'string' || !image_url.trim()) {
+    return res.status(400).json({ error: 'image_url is required — please upload an image' });
+  }
 
   const { data, error } = await serviceClient
     .from('equipment')
@@ -47,7 +64,8 @@ router.post('/', authMiddleware, async (req, res) => {
       category,
       status: 'available',
       owner_id: req.user.id,          // always the authenticated user — body value ignored
-      image_url: image_url || null,   // plain URL string or null; no upload logic
+      image_url: image_url.trim(),
+      price_note: price_note ? price_note.trim() : null,
     })
     .select(EQUIPMENT_SELECT)
     .single();
