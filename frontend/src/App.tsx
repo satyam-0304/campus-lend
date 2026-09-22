@@ -7,6 +7,8 @@ import {
   ChevronLeft,
   Compass,
   FileText,
+  Image,
+  IndianRupee,
   Laptop,
   LoaderCircle,
   LogOut,
@@ -15,11 +17,13 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Trash2,
+  Upload,
   UserRound,
   X,
   XCircle,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { api } from '@/lib/api';
 import type {
@@ -34,6 +38,11 @@ import { AuthModal } from './components/AuthModal';
 
 type Page = 'explore' | 'add' | 'dashboard' | 'profile';
 
+// Pending action captured before profile modal
+type PendingAction =
+  | { type: 'request'; item: EquipmentWithOwner }
+  | { type: 'list'; formData: { name: string; category: Category; imageUrl: string; priceNote: string } };
+
 const categoryLabels: Record<Category, string> = {
   academics: 'Academics',
   electronics: 'Electronics',
@@ -41,16 +50,32 @@ const categoryLabels: Record<Category, string> = {
   event_wear: 'Event wear',
 };
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const BUCKET = 'item-images';
 
+// ── Supabase Storage upload helper ─────────────────────────────
+async function uploadImageToStorage(file: File, userId: string): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false });
+  if (error) throw new Error(`Image upload failed: ${error.message}`);
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
 
 function App() {
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState<{ user: { id: string; email?: string; user_metadata?: { full_name?: string } } } | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [page, setPage] = useState<Page>('explore');
   const [toast, setToast] = useState<string | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+  // Profile completion modal state
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const openAuth = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
@@ -98,12 +123,15 @@ function App() {
       setProfile(null);
       return;
     }
+    setProfileLoading(true);
     (async () => {
       try {
         const data = await api.getMyProfile();
         setProfile(data);
       } catch {
-        /* Profile fetch failed — stays null, ProfileSetup screen will show */
+        /* Profile fetch failed — stays null, show spinner until resolved */
+      } finally {
+        setProfileLoading(false);
       }
     })();
   }, [session]);
@@ -114,6 +142,24 @@ function App() {
     } catch { /* ignore */ }
     setSession(null);
     setProfile(null);
+  };
+
+  // Called by Explore/AddItem to check if profile is complete before acting
+  const requireProfile = (action: PendingAction): boolean => {
+    if (!profile?.room_number || !profile?.phone_number) {
+      setPendingAction(action);
+      setProfileModalOpen(true);
+      return false; // not complete — caller should abort
+    }
+    return true; // complete — caller can proceed
+  };
+
+  // Called when ProfileCompletionModal saves successfully
+  const handleProfileSaved = (savedProfile: Profile) => {
+    setProfile(savedProfile);
+    setProfileModalOpen(false);
+    // If there was a pending action, the component that triggered it
+    // will re-attempt via pendingAction state (passed down as prop)
   };
 
   if (!ready) {
@@ -147,9 +193,17 @@ function App() {
     );
   }
 
-  if (!profile) {
-    return <ProfileSetup initialName={session.user.user_metadata?.full_name || ''} onDone={setProfile} />;
+  // Show spinner while profile is being fetched (first load after login)
+  if (profileLoading && !profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <LoaderCircle size={28} className="animate-spin text-sky-500" />
+      </div>
+    );
   }
+
+  // profile can be null briefly — guard downstream components with profile!
+  const safeProfile: Profile = profile ?? { id: session.user.id, full_name: session.user.user_metadata?.full_name ?? '', room_number: '', phone_number: '' };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -157,20 +211,117 @@ function App() {
         page={page}
         setPage={setPage}
         onLogout={handleLogout}
-        initials={getInitials(profile.full_name)}
+        initials={getInitials(safeProfile.full_name)}
       />
       <main className="mx-auto max-w-7xl px-5 pb-16 pt-8 sm:px-8 lg:px-10">
-        {page === 'explore' && <Explore userId={session.user.id} showToast={showToast} profile={profile} />}
-        {page === 'add' && <AddItem ownerId={session.user.id} ownerProfile={profile} onDone={() => setPage('explore')} showToast={showToast} />}
+        {page === 'explore' && (
+          <Explore
+            userId={session.user.id}
+            showToast={showToast}
+            profile={safeProfile}
+            requireProfile={requireProfile}
+            pendingAction={pendingAction}
+            clearPendingAction={() => setPendingAction(null)}
+          />
+        )}
+        {page === 'add' && (
+          <AddItem
+            ownerId={session.user.id}
+            ownerProfile={safeProfile}
+            onDone={() => setPage('explore')}
+            showToast={showToast}
+            requireProfile={requireProfile}
+            pendingAction={pendingAction}
+            clearPendingAction={() => setPendingAction(null)}
+          />
+        )}
         {page === 'dashboard' && <Dashboard userId={session.user.id} showToast={showToast} />}
-        {page === 'profile' && <ProfilePage profile={profile} setProfile={setProfile} showToast={showToast} />}
+        {page === 'profile' && <ProfilePage profile={safeProfile} setProfile={setProfile} showToast={showToast} />}
       </main>
+
+      {/* Profile completion modal — shown when room/phone not filled yet */}
+      {profileModalOpen && (
+        <ProfileCompletionModal
+          initialName={safeProfile.full_name}
+          onSave={handleProfileSaved}
+          onCancel={() => { setProfileModalOpen(false); setPendingAction(null); }}
+          showToast={showToast}
+        />
+      )}
+
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-2xl">
           <Check size={17} className="text-emerald-400" />
           {toast}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Profile Completion Modal ────────────────────────────────────
+
+function ProfileCompletionModal({
+  initialName,
+  onSave,
+  onCancel,
+  showToast,
+}: {
+  initialName: string;
+  onSave: (p: Profile) => void;
+  onCancel: () => void;
+  showToast: (msg: string) => void;
+}) {
+  const [fullName, setFullName] = useState(initialName);
+  const [room, setRoom] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    if (!room.trim()) { setError('Room number is required'); return; }
+    setLoading(true);
+    try {
+      const data = await api.updateMyProfile({ full_name: fullName, room_number: room, phone_number: phone });
+      showToast('Profile saved!');
+      onSave(data);
+    } catch (err: any) {
+      setError(err?.message || 'Could not save profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-5 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-100 sm:p-8 animate-[fadeSlideUp_0.2s_ease-out]">
+        <div className="mb-5 flex items-start justify-between">
+          <div>
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+              <Sparkles size={24} />
+            </div>
+            <h2 className="text-xl font-extrabold">One quick step</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              We need your room number so other students can find you for handoffs.
+            </p>
+          </div>
+          <button onClick={onCancel} className="rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700">
+            <X size={20} />
+          </button>
+        </div>
+        {error && <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">{error}</div>}
+        <form onSubmit={submit} className="space-y-4">
+          <Field label="Full name" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+          <Field label="Room number" placeholder="204-B" value={room} onChange={(e) => setRoom(e.target.value)} required />
+          <Field label="Phone number (optional)" placeholder="+91 98765 43210" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-70">
+            {loading && <LoaderCircle size={17} className="animate-spin" />}
+            Save & continue <ArrowRight size={17} />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -259,48 +410,6 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   );
 }
 
-function ProfileSetup({ initialName, onDone }: { initialName: string; onDone: (p: Profile) => void }) {
-  const [fullName, setFullName] = useState(initialName);
-  const [room, setRoom] = useState('');
-  const [phone, setPhone] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const data = await api.updateMyProfile({ full_name: fullName, room_number: room, phone_number: phone });
-      setLoading(false);
-      onDone(data);
-    } catch (err: any) {
-      setError(err?.message || 'Could not save profile. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-sky-50 px-5 py-10">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-100 sm:p-8">
-        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600"><Sparkles size={24} /></div>
-        <h2 className="text-xl font-extrabold">Complete your profile</h2>
-        <p className="mt-1 text-sm leading-6 text-slate-500">Other students need to know who you are and where to find you.</p>
-        {error && <div className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">{error}</div>}
-        <form onSubmit={submit} className="mt-6 space-y-4">
-          <Field label="Full name" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-          <Field label="Room number" placeholder="204-B" value={room} onChange={(e) => setRoom(e.target.value)} required />
-          <Field label="Phone number" placeholder="+91 98765 43210" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-70">
-            {loading && <LoaderCircle size={17} className="animate-spin" />}
-            Get started <ArrowRight size={17} />
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 // ── Navbar ─────────────────────────────────────────────────
 
 function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p: Page) => void; onLogout: () => void; initials: string }) {
@@ -355,9 +464,23 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
 
 // ── Explore ────────────────────────────────────────────────
 
-function Explore({ userId, showToast, profile }: { userId: string; showToast: (msg: string) => void; profile: Profile }) {
+function Explore({
+  userId,
+  showToast,
+  profile,
+  requireProfile,
+  pendingAction,
+  clearPendingAction,
+}: {
+  userId: string;
+  showToast: (msg: string) => void;
+  profile: Profile;
+  requireProfile: (action: PendingAction) => boolean;
+  pendingAction: PendingAction | null;
+  clearPendingAction: () => void;
+}) {
   const [items, setItems] = useState<EquipmentWithOwner[]>([]);
-  const [myRequests, setMyRequests] = useState<Record<string, RequestStatus>>({});
+  const [myRequests, setMyRequests] = useState<Record<string, { status: RequestStatus; requestId: string }>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category | 'all'>('all');
@@ -376,8 +499,8 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
   const loadMyRequests = useCallback(async () => {
     try {
       const { borrowed } = await api.getDashboard();
-      const map: Record<string, RequestStatus> = {};
-      borrowed.forEach((r) => { map[r.equipment_id] = r.status; });
+      const map: Record<string, { status: RequestStatus; requestId: string }> = {};
+      borrowed.forEach((r) => { map[r.equipment_id] = { status: r.status, requestId: r.request_id }; });
       setMyRequests(map);
     } catch {
       /* Not critical — request status map stays empty */
@@ -386,18 +509,44 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
 
   useEffect(() => { loadItems(); loadMyRequests(); }, [loadItems, loadMyRequests]);
 
+  // Re-attempt pending request after profile was saved
+  useEffect(() => {
+    if (pendingAction?.type === 'request' && profile.room_number) {
+      const item = pendingAction.item;
+      clearPendingAction();
+      handleRequest(item);
+    }
+  }, [profile.room_number, pendingAction]);
+
   const filtered = useMemo(
     () => items.filter((item) => item.equipment_name.toLowerCase().includes(search.toLowerCase()) && (category === 'all' || item.category === category)),
     [items, search, category],
   );
 
   const handleRequest = async (item: EquipmentWithOwner) => {
+    if (!requireProfile({ type: 'request', item })) return;
     try {
-      await api.createRequest({ equipment_id: item.equipment_id, owner_id: item.owner_id });
-      setMyRequests((prev) => ({ ...prev, [item.equipment_id]: 'pending' }));
+      const req = await api.createRequest({ equipment_id: item.equipment_id, owner_id: item.owner_id });
+      setMyRequests((prev) => ({ ...prev, [item.equipment_id]: { status: 'pending', requestId: req.request_id } }));
       showToast('Request sent to the owner');
     } catch (err: any) {
       showToast(err?.message || 'Could not send request. Please try again.');
+    }
+  };
+
+  const handleCancelRequest = async (item: EquipmentWithOwner) => {
+    const entry = myRequests[item.equipment_id];
+    if (!entry) return;
+    try {
+      await api.cancelRequest(entry.requestId);
+      setMyRequests((prev) => {
+        const next = { ...prev };
+        delete next[item.equipment_id];
+        return next;
+      });
+      showToast('Request cancelled');
+    } catch (err: any) {
+      showToast(err?.message || 'Could not cancel request. Please try again.');
     }
   };
 
@@ -436,7 +585,14 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
       {filtered.length ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
-            <ItemCard key={item.equipment_id} item={item} isOwn={item.owner_id === userId} requestStatus={myRequests[item.equipment_id]} onRequest={handleRequest} />
+            <ItemCard
+              key={item.equipment_id}
+              item={item}
+              isOwn={item.owner_id === userId}
+              requestEntry={myRequests[item.equipment_id]}
+              onRequest={handleRequest}
+              onCancelRequest={handleCancelRequest}
+            />
           ))}
         </div>
       ) : (
@@ -446,62 +602,264 @@ function Explore({ userId, showToast, profile }: { userId: string; showToast: (m
   );
 }
 
-function ItemCard({ item, isOwn, requestStatus, onRequest }: { item: EquipmentWithOwner; isOwn: boolean; requestStatus?: RequestStatus; onRequest: (item: EquipmentWithOwner) => void }) {
+function ItemCard({
+  item,
+  isOwn,
+  requestEntry,
+  onRequest,
+  onCancelRequest,
+}: {
+  item: EquipmentWithOwner;
+  isOwn: boolean;
+  requestEntry?: { status: RequestStatus; requestId: string };
+  onRequest: (item: EquipmentWithOwner) => void;
+  onCancelRequest: (item: EquipmentWithOwner) => void;
+}) {
+  const requestStatus = requestEntry?.status;
   return (
-    <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/60">
-      <div className="mb-7 flex items-start justify-between">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
-          {item.category === 'electronics' ? <Laptop size={26} /> : item.category === 'academics' ? <BookOpen size={26} /> : item.category === 'sports' ? <Compass size={26} /> : <Sparkles size={26} />}
+    <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/60 overflow-hidden">
+      {/* Item image or category icon */}
+      {item.image_url ? (
+        <div className="h-44 w-full overflow-hidden bg-slate-100">
+          <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover transition group-hover:scale-105" />
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
-      </div>
-      <div className="mb-5 flex-1">
-        <p className="mb-1 text-xs font-bold uppercase tracking-wider text-sky-600">{categoryLabels[item.category]}</p>
-        <h3 className="text-base font-extrabold text-slate-900">{item.equipment_name}</h3>
-        <p className="mt-2 text-sm text-slate-500">Owned by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}</p>
-      </div>
-      {isOwn ? (
-        <div className="w-full rounded-xl bg-slate-50 py-3 text-center text-sm font-bold text-slate-400">Your listing</div>
       ) : (
-        <button
-          disabled={item.status !== 'available' || requestStatus === 'pending' || requestStatus === 'approved'}
-          onClick={() => onRequest(item)}
-          className="w-full rounded-xl bg-slate-900 py-3 text-sm font-extrabold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-        >
-          {item.status !== 'available' ? 'Currently borrowed' : requestStatus === 'pending' ? 'Request sent' : requestStatus === 'approved' ? 'Approved' : 'Request to borrow'}
-        </button>
+        <div className="flex h-44 w-full items-center justify-center bg-sky-50">
+          {item.category === 'electronics' ? <Laptop size={40} className="text-sky-300" /> : item.category === 'academics' ? <BookOpen size={40} className="text-sky-300" /> : item.category === 'sports' ? <Compass size={40} className="text-sky-300" /> : <Sparkles size={40} className="text-sky-300" />}
+        </div>
       )}
+
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-3 flex items-start justify-between">
+          <p className="text-xs font-bold uppercase tracking-wider text-sky-600">{categoryLabels[item.category]}</p>
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
+        </div>
+        <h3 className="text-base font-extrabold text-slate-900">{item.equipment_name}</h3>
+        {item.price_note && (
+          <div className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-amber-600">
+            <IndianRupee size={13} />
+            <span>{item.price_note}</span>
+          </div>
+        )}
+        <p className="mt-2 flex-1 text-sm text-slate-500">Owned by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}</p>
+
+        <div className="mt-5">
+          {isOwn ? (
+            <div className="w-full rounded-xl bg-slate-50 py-3 text-center text-sm font-bold text-slate-400">Your listing</div>
+          ) : requestStatus === 'pending' ? (
+            <div className="flex gap-2">
+              <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-3 text-sm font-bold text-amber-600">Request sent</div>
+              <button
+                onClick={() => onCancelRequest(item)}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-3 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
+                title="Cancel request"
+              >
+                <XCircle size={15} /> Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              disabled={item.status !== 'available' || requestStatus === 'approved'}
+              onClick={() => onRequest(item)}
+              className="w-full rounded-xl bg-slate-900 py-3 text-sm font-extrabold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            >
+              {item.status !== 'available' ? 'Currently borrowed' : requestStatus === 'approved' ? 'Approved ✓' : 'Request to borrow'}
+            </button>
+          )}
+        </div>
+      </div>
     </article>
+  );
+}
+
+// ── Image Upload Component ──────────────────────────────────
+
+function ImageUploader({
+  onUploaded,
+  userId,
+}: {
+  onUploaded: (url: string) => void;
+  userId: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPEG, PNG, WebP, etc.)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be smaller than 5 MB');
+      return;
+    }
+    setError('');
+    setPreview(URL.createObjectURL(file));
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(file, userId);
+      onUploaded(url);
+    } catch (err: any) {
+      setError(err?.message || 'Upload failed. Please try again.');
+      setPreview(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-bold text-slate-700">
+        Item photo <span className="text-rose-500">*</span>
+      </label>
+      {preview ? (
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200">
+          <img src={preview} alt="Preview" className="h-52 w-full object-cover" />
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+              <LoaderCircle size={28} className="animate-spin text-sky-500" />
+              <span className="ml-2 text-sm font-semibold text-sky-600">Uploading…</span>
+            </div>
+          )}
+          {!uploading && (
+            <button
+              type="button"
+              onClick={() => { setPreview(null); onUploaded(''); if (inputRef.current) inputRef.current.value = ''; }}
+              className="absolute right-2 top-2 flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-xs font-bold text-slate-600 shadow hover:bg-white"
+            >
+              <X size={13} /> Change
+            </button>
+          )}
+        </div>
+      ) : (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          onClick={() => inputRef.current?.click()}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-10 transition ${dragOver ? 'border-sky-400 bg-sky-50' : 'border-slate-200 bg-slate-50 hover:border-sky-300 hover:bg-sky-50/50'}`}
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm text-sky-500">
+            <Upload size={22} />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-bold text-slate-700">Drop your photo here, or <span className="text-sky-600">browse</span></p>
+            <p className="mt-1 text-xs text-slate-400">JPEG, PNG, WebP · max 5 MB</p>
+          </div>
+        </div>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onInputChange} />
+      {error && <p className="mt-2 text-xs font-semibold text-rose-500">{error}</p>}
+    </div>
   );
 }
 
 // ── Add Item ───────────────────────────────────────────────
 
-function AddItem({ ownerId, ownerProfile, onDone, showToast }: { ownerId: string; ownerProfile: Profile; onDone: () => void; showToast: (msg: string) => void }) {
+function AddItem({
+  ownerId,
+  ownerProfile,
+  onDone,
+  showToast,
+  requireProfile,
+  pendingAction,
+  clearPendingAction,
+}: {
+  ownerId: string;
+  ownerProfile: Profile;
+  onDone: () => void;
+  showToast: (msg: string) => void;
+  requireProfile: (action: PendingAction) => boolean;
+  pendingAction: PendingAction | null;
+  clearPendingAction: () => void;
+}) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('academics');
+  const [imageUrl, setImageUrl] = useState('');
+  const [priceNote, setPriceNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  // My listings state
+  const [myItems, setMyItems] = useState<EquipmentWithOwner[]>([]);
+  const [myItemsLoading, setMyItemsLoading] = useState(true);
+
+  const loadMyItems = useCallback(async () => {
+    try {
+      const data = await api.getMyEquipment();
+      setMyItems(data);
+    } catch {
+      setMyItems([]);
+    } finally {
+      setMyItemsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadMyItems(); }, [loadMyItems]);
+
+  // Re-attempt listing after profile was saved via modal
+  useEffect(() => {
+    if (pendingAction?.type === 'list' && ownerProfile.room_number) {
+      const { name: pName, category: pCat, imageUrl: pUrl, priceNote: pPrice } = pendingAction.formData;
+      clearPendingAction();
+      doSubmit(pName, pCat, pUrl, pPrice);
+    }
+  }, [ownerProfile.room_number, pendingAction]);
+
+  const doSubmit = async (itemName: string, itemCat: Category, itemImageUrl: string, itemPriceNote: string) => {
     setError('');
     setLoading(true);
-
     try {
-      await api.createEquipment({ equipment_name: name, category, image_url: null });
-      setLoading(false);
-      showToast('Item added to the campus library');
-      onDone();
-      return;
+      const newItem = await api.createEquipment({
+        equipment_name: itemName,
+        category: itemCat,
+        image_url: itemImageUrl,
+        price_note: itemPriceNote || null,
+      });
+      setMyItems((prev) => [newItem, ...prev]);
+      showToast('Item added to the campus library 🎉');
+      // Reset form
+      setName('');
+      setCategory('academics');
+      setImageUrl('');
+      setPriceNote('');
     } catch (err: any) {
-      console.error('Failed to add equipment via API:', err);
       setError(err?.message || 'Failed to add item. Please ensure you are logged in.');
+    } finally {
       setLoading(false);
-      return;
     }
+  };
 
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!imageUrl) { setError('Please upload a photo of your item before listing.'); return; }
+    if (!requireProfile({ type: 'list', formData: { name, category, imageUrl, priceNote } })) return;
+    await doSubmit(name, category, imageUrl, priceNote);
+  };
 
+  const handleDelete = async (equipmentId: string) => {
+    try {
+      await api.deleteEquipment(equipmentId);
+      setMyItems((prev) => prev.filter((i) => i.equipment_id !== equipmentId));
+      showToast('Listing removed');
+    } catch (err: any) {
+      showToast(err?.message || 'Could not delete item. Please try again.');
+    }
   };
 
   return (
@@ -524,6 +882,24 @@ function AddItem({ ownerId, ownerProfile, onDone, showToast }: { ownerId: string
               <option value="event_wear">Event wear</option>
             </select>
           </div>
+          {/* Image upload — required */}
+          <ImageUploader onUploaded={setImageUrl} userId={ownerId} />
+          {/* Price note — optional */}
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">
+              Price / Terms <span className="text-xs font-normal text-slate-400">(optional)</span>
+            </label>
+            <div className="relative">
+              <IndianRupee size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="e.g. ₹50/day, free for 2 days, negotiable"
+                value={priceNote}
+                onChange={(e) => setPriceNote(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+              />
+            </div>
+          </div>
         </div>
         {error && <div className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">{error}</div>}
         <button disabled={loading} className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-70">
@@ -531,6 +907,58 @@ function AddItem({ ownerId, ownerProfile, onDone, showToast }: { ownerId: string
           List this item <ArrowRight size={17} />
         </button>
       </form>
+
+      {/* ── My Listings ────────────────────────────── */}
+      <div className="mt-12">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-extrabold">Your listings</h2>
+            <p className="mt-0.5 text-sm text-slate-400">Items you've shared on campus</p>
+          </div>
+          {myItems.length > 0 && <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-extrabold text-sky-700">{myItems.length} item{myItems.length !== 1 ? 's' : ''}</span>}
+        </div>
+
+        {myItemsLoading ? (
+          <CenteredSpinner />
+        ) : myItems.length === 0 ? (
+          <Empty icon={<PackagePlus size={24} />} title="No listings yet" text="Items you add above will appear here." />
+        ) : (
+          <div className="space-y-3">
+            {myItems.map((item) => (
+              <div key={item.equipment_id} className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300">
+                {item.image_url ? (
+                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                    <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-400">
+                    <Image size={22} />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-sm font-extrabold text-slate-900">{item.equipment_name}</h3>
+                  <p className="mt-0.5 text-xs text-slate-400">{categoryLabels[item.category]}</p>
+                  {item.price_note && (
+                    <p className="mt-0.5 flex items-center gap-0.5 text-xs font-semibold text-amber-600">
+                      <IndianRupee size={11} />{item.price_note}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
+                  <button
+                    onClick={() => handleDelete(item.equipment_id)}
+                    className="flex items-center gap-1 rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
+                    title="Remove listing"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -567,6 +995,16 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
     }
   };
 
+  const handleCancelOutgoing = async (requestId: string) => {
+    try {
+      await api.cancelRequest(requestId);
+      setOutgoing((prev) => prev.filter((r) => r.request_id !== requestId));
+      showToast('Request cancelled');
+    } catch (err: any) {
+      showToast(err?.message || 'Could not cancel request. Please try again.');
+    }
+  };
+
   if (loading) return <CenteredSpinner />;
 
   return (
@@ -577,7 +1015,40 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
         <p className="mt-2 text-slate-500">Keep track of your lending and borrowing.</p>
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
-        <RequestSection title="My requests" subtitle="Items you asked to borrow" requests={outgoing} empty="You haven't requested anything yet." />
+        {/* Outgoing requests */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-6">
+            <h2 className="text-lg font-extrabold">My requests</h2>
+            <p className="mt-1 text-sm text-slate-500">Items you asked to borrow</p>
+          </div>
+          {outgoing.length ? (
+            <div className="space-y-3">
+              {outgoing.map((request) => (
+                <div key={request.request_id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-extrabold">{request.equipment.equipment_name}</h3>
+                    <p className="mt-1 text-xs text-slate-500">Owner: {request.owner.full_name}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <StatusBadge status={request.status} />
+                    {request.status === 'pending' && (
+                      <button
+                        onClick={() => handleCancelOutgoing(request.request_id)}
+                        className="flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
+                      >
+                        <XCircle size={13} /> Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Empty icon={<FileText size={24} />} title="Nothing here yet" text="You haven't requested anything yet." />
+          )}
+        </div>
+
+        {/* Incoming requests */}
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6">
             <h2 className="text-lg font-extrabold">Requests for my items</h2>
@@ -591,6 +1062,9 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
                     <div>
                       <h3 className="text-sm font-extrabold">{request.equipment.equipment_name}</h3>
                       <p className="mt-1 text-xs text-slate-500">{request.borrower.full_name} · Room {request.borrower.room_number}</p>
+                      {request.borrower.phone_number && (
+                        <p className="text-xs text-slate-400">📞 {request.borrower.phone_number}</p>
+                      )}
                     </div>
                     <StatusBadge status={request.status} />
                   </div>
@@ -608,32 +1082,6 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function RequestSection({ title, subtitle, requests, empty }: { title: string; subtitle: string; requests: BorrowRequestWithDetails[]; empty: string }) {
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="mb-6">
-        <h2 className="text-lg font-extrabold">{title}</h2>
-        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
-      </div>
-      {requests.length ? (
-        <div className="space-y-3">
-          {requests.map((request) => (
-            <div key={request.request_id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4">
-              <div>
-                <h3 className="text-sm font-extrabold">{request.equipment.equipment_name}</h3>
-                <p className="mt-1 text-xs text-slate-500">Owner: {request.owner.full_name}</p>
-              </div>
-              <StatusBadge status={request.status} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Empty icon={<FileText size={24} />} title="Nothing here yet" text={empty} />
-      )}
     </div>
   );
 }

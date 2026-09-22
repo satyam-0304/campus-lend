@@ -20,3 +20,8 @@ button:disabled { cursor: not-allowed; }
 @layer utilities {
   .h-18 { height: 4.5rem; }
 }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
