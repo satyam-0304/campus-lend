@@ -184,9 +184,9 @@ function App() {
           onSuccess={showToast}
         />
         {toast && (
-          <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-2xl">
-            <Check size={17} className="text-emerald-400" />
-            {toast}
+          <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-900 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold text-white shadow-2xl max-w-[calc(100vw-2rem)] text-center">
+            <Check size={16} className="text-emerald-400 shrink-0" />
+            <span className="truncate">{toast}</span>
           </div>
         )}
       </>
@@ -213,7 +213,7 @@ function App() {
         onLogout={handleLogout}
         initials={getInitials(safeProfile.full_name)}
       />
-      <main className="mx-auto max-w-7xl px-5 pb-16 pt-8 sm:px-8 lg:px-10">
+      <main className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-10 pb-16 pt-6 sm:pt-8">
         {page === 'explore' && (
           <Explore
             userId={session.user.id}
@@ -250,9 +250,9 @@ function App() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-2xl">
-          <Check size={17} className="text-emerald-400" />
-          {toast}
+        <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-900 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold text-white shadow-2xl max-w-[calc(100vw-2rem)] text-center">
+          <Check size={16} className="text-emerald-400 shrink-0" />
+          <span className="truncate">{toast}</span>
         </div>
       )}
     </div>
@@ -295,28 +295,34 @@ function ProfileCompletionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-5 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-100 sm:p-8 animate-[fadeSlideUp_0.2s_ease-out]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-3 sm:p-5 backdrop-blur-sm">
+      <div className="my-auto w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-3xl bg-white p-5 sm:p-8 shadow-2xl ring-1 ring-slate-100 animate-[fadeSlideUp_0.2s_ease-out]">
         <div className="mb-5 flex items-start justify-between">
           <div>
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
-              <Sparkles size={24} />
+            <div className="mb-3 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+              <Sparkles size={22} />
             </div>
-            <h2 className="text-xl font-extrabold">One quick step</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
+            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">One quick step</h2>
+            <p className="mt-1 text-xs sm:text-sm leading-6 text-slate-500">
               We need your room number so other students can find you for handoffs.
             </p>
           </div>
-          <button onClick={onCancel} className="rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700">
+          <button
+            onClick={onCancel}
+            className="flex h-10 w-10 items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition"
+          >
             <X size={20} />
           </button>
         </div>
-        {error && <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">{error}</div>}
+        {error && <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">{error}</div>}
         <form onSubmit={submit} className="space-y-4">
           <Field label="Full name" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
           <Field label="Room number" placeholder="204-B" value={room} onChange={(e) => setRoom(e.target.value)} required />
           <Field label="Phone number (optional)" placeholder="+91 98765 43210" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-70">
+          <button
+            disabled={loading}
+            className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70"
+          >
             {loading && <LoaderCircle size={17} className="animate-spin" />}
             Save & continue <ArrowRight size={17} />
           </button>
@@ -376,28 +382,28 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sky-50 px-5 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-sky-50 px-4 py-8 sm:px-6 sm:py-12">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
+        <div className="mb-6 sm:mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
             <img src="/assets/images/logo.jpeg" alt="CampusLend" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">CampusLend</h1>
           <p className="mt-2 text-sm text-slate-500">Share more. Carry less.</p>
         </div>
-        <div className="rounded-3xl bg-white p-6 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100 sm:p-8">
-          <div className="mb-7 grid grid-cols-2 rounded-xl bg-slate-50 p-1">
-            <button type="button" onClick={() => setMode('login')} className={`rounded-lg py-2.5 text-sm font-bold transition ${mode === 'login' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500'}`}>Log in</button>
-            <button type="button" onClick={() => setMode('signup')} className={`rounded-lg py-2.5 text-sm font-bold transition ${mode === 'signup' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500'}`}>Sign up</button>
+        <div className="rounded-3xl bg-white p-5 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100 sm:p-8">
+          <div className="mb-6 sm:mb-7 grid grid-cols-2 rounded-xl bg-slate-50 p-1">
+            <button type="button" onClick={() => setMode('login')} className={`flex min-h-[44px] items-center justify-center rounded-lg py-2.5 text-sm font-bold transition ${mode === 'login' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Log in</button>
+            <button type="button" onClick={() => setMode('signup')} className={`flex min-h-[44px] items-center justify-center rounded-lg py-2.5 text-sm font-bold transition ${mode === 'signup' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Sign up</button>
           </div>
-          <h2 className="text-xl font-extrabold">{mode === 'login' ? 'Welcome back' : 'Join your campus'}</h2>
+          <h2 className="text-xl font-extrabold text-slate-900">{mode === 'login' ? 'Welcome back' : 'Join your campus'}</h2>
           <p className="mt-1 text-sm leading-6 text-slate-500">{mode === 'login' ? 'Find the things you need, right where you live.' : 'Create an account to lend and borrow with ease.'}</p>
           {error && <div className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">{error}</div>}
           <form onSubmit={submit} className="mt-6 space-y-4">
             {mode === 'signup' && <Field label="Full name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} required />}
             <Field label="Email" type="email" placeholder="john@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <Field label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-70">
+            <button disabled={loading} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-70">
               {loading && <LoaderCircle size={17} className="animate-spin" />}
               {mode === 'login' ? 'Log in' : 'Create account'}
               <ArrowRight size={17} />
@@ -422,10 +428,10 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
   ];
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/90 backdrop-blur-lg shadow-sm">
-      <div className="mx-auto flex h-20 max-w-[1360px] items-center justify-between px-6 sm:px-10 lg:px-12">
-        <button onClick={() => setPage('explore')} className="flex items-center gap-3.5 shrink-0">
-          <div className="h-10 w-10 overflow-hidden rounded-2xl bg-sky-50 ring-1 ring-slate-200/80"><img src="/assets/images/logo.jpeg" alt="" className="h-full w-full object-cover" /></div>
-          <span className="text-xl font-extrabold tracking-tight">Campus<span className="text-sky-600">Lend</span></span>
+      <div className="mx-auto flex h-16 sm:h-20 max-w-[1360px] items-center justify-between px-4 sm:px-8 lg:px-12">
+        <button onClick={() => setPage('explore')} className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
+          <div className="h-9 w-9 sm:h-10 sm:w-10 overflow-hidden rounded-2xl bg-sky-50 ring-1 ring-slate-200/80"><img src="/assets/images/logo.jpeg" alt="CampusLend" className="h-full w-full object-cover" /></div>
+          <span className="text-lg sm:text-xl font-extrabold tracking-tight">Campus<span className="text-sky-600">Lend</span></span>
         </button>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map(({ id, label, icon: Icon }) => (
@@ -434,28 +440,36 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
             </button>
           ))}
         </nav>
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex items-center gap-2 sm:gap-3">
           <button className="hidden rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 sm:block"><Bell size={19} /></button>
-          <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 rounded-full bg-slate-50 p-1.5 pr-2.5 transition hover:bg-slate-100">
+          <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-slate-50 p-1 sm:p-1.5 sm:pr-2.5 transition hover:bg-slate-100">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-xs font-extrabold text-sky-700">{initials}</div>
-            <ChevronDown size={15} className="text-slate-400" />
+            <ChevronDown size={15} className="text-slate-400 hidden sm:block" />
           </button>
           {userMenuOpen && (
-            <div className="absolute right-0 top-12 w-40 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl">
+            <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl">
               <button onClick={() => { setPage('profile'); setUserMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"><UserRound size={16} />Profile</button>
               <button onClick={onLogout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50"><LogOut size={16} />Log out</button>
             </div>
           )}
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="rounded-xl p-2 text-slate-500 md:hidden">{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 md:hidden">{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
         </div>
       </div>
       {mobileOpen && (
-        <nav className="border-t border-slate-100 px-5 py-3 md:hidden">
+        <nav className="border-t border-slate-100 px-4 py-3 md:hidden space-y-1 bg-white">
           {links.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => { setPage(id); setMobileOpen(false); }} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold ${page === id ? 'bg-sky-50 text-sky-700' : 'text-slate-600'}`}>
+            <button key={id} onClick={() => { setPage(id); setMobileOpen(false); }} className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold ${page === id ? 'bg-sky-50 text-sky-700' : 'text-slate-600 hover:bg-slate-50'}`}>
               <Icon size={17} />{label}
             </button>
           ))}
+          <div className="my-1 border-t border-slate-100 pt-1">
+            <button onClick={() => { setPage('profile'); setMobileOpen(false); }} className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold ${page === 'profile' ? 'bg-sky-50 text-sky-700' : 'text-slate-600 hover:bg-slate-50'}`}>
+              <UserRound size={17} />Profile
+            </button>
+            <button onClick={() => { setMobileOpen(false); onLogout(); }} className="flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50">
+              <LogOut size={17} />Log out
+            </button>
+          </div>
         </nav>
       )}
     </header>
@@ -554,36 +568,36 @@ function Explore({
 
   return (
     <div>
-      <div className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+      <div className="mb-8 sm:mb-10 flex flex-col justify-between gap-4 sm:gap-6 lg:flex-row lg:items-end">
         <div>
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-700"><Sparkles size={14} /> Campus exchange</div>
-          <h1 className="max-w-xl text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Borrow what you need.<br /><span className="text-sky-600">Lend what you can.</span></h1>
-          <p className="mt-4 max-w-lg text-base leading-7 text-slate-500">A simpler way to share useful things with the people around you.</p>
+          <div className="mb-3 sm:mb-4 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-700"><Sparkles size={14} /> Campus exchange</div>
+          <h1 className="max-w-xl text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">Borrow what you need.<br /><span className="text-sky-600">Lend what you can.</span></h1>
+          <p className="mt-3 sm:mt-4 max-w-lg text-sm sm:text-base leading-relaxed text-slate-500">A simpler way to share useful things with the people around you.</p>
         </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-sm w-fit">
           <div className="flex -space-x-2"><div className="h-8 w-8 rounded-full border-2 border-white bg-amber-100" /><div className="h-8 w-8 rounded-full border-2 border-white bg-sky-100" /><div className="h-8 w-8 rounded-full border-2 border-white bg-emerald-100" /></div>
           <div><p className="text-sm font-extrabold">{items.length} items</p><p className="text-xs text-slate-400">listed on campus</p></div>
         </div>
       </div>
-      <div className="mb-7 flex flex-col gap-4">
+      <div className="mb-7 flex flex-col gap-3.5 sm:gap-4">
         <div className="relative max-w-xl">
-          <Search size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" placeholder="Search for calculators, rackets, adapters..." />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white py-3 sm:py-3.5 pl-11 sm:pl-12 pr-4 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" placeholder="Search for calculators, rackets, adapters..." />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
           {(['all', 'academics', 'electronics', 'sports', 'event_wear'] as const).map((cat) => (
-            <button key={cat} onClick={() => setCategory(cat)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${category === cat ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20' : 'border border-slate-200 bg-white text-slate-500 hover:border-sky-200 hover:text-sky-700'}`}>
+            <button key={cat} onClick={() => setCategory(cat)} className={`min-h-[38px] whitespace-nowrap rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold transition shrink-0 ${category === cat ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20' : 'border border-slate-200 bg-white text-slate-500 hover:border-sky-200 hover:text-sky-700'}`}>
               {cat === 'all' ? 'All items' : categoryLabels[cat]}
             </button>
           ))}
         </div>
       </div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-extrabold">Available near you</h2>
-        <span className="text-sm font-semibold text-slate-400">{filtered.length} items</span>
+        <h2 className="text-base sm:text-lg font-extrabold">Available near you</h2>
+        <span className="text-xs sm:text-sm font-semibold text-slate-400">{filtered.length} items</span>
       </div>
       {filtered.length ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
             <ItemCard
               key={item.equipment_id}
@@ -620,38 +634,38 @@ function ItemCard({
     <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/60 overflow-hidden">
       {/* Item image or category icon */}
       {item.image_url ? (
-        <div className="h-44 w-full overflow-hidden bg-slate-100">
+        <div className="h-40 sm:h-44 w-full overflow-hidden bg-slate-100">
           <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover transition group-hover:scale-105" />
         </div>
       ) : (
-        <div className="flex h-44 w-full items-center justify-center bg-sky-50">
-          {item.category === 'electronics' ? <Laptop size={40} className="text-sky-300" /> : item.category === 'academics' ? <BookOpen size={40} className="text-sky-300" /> : item.category === 'sports' ? <Compass size={40} className="text-sky-300" /> : <Sparkles size={40} className="text-sky-300" />}
+        <div className="flex h-40 sm:h-44 w-full items-center justify-center bg-sky-50">
+          {item.category === 'electronics' ? <Laptop size={36} className="text-sky-300" /> : item.category === 'academics' ? <BookOpen size={36} className="text-sky-300" /> : item.category === 'sports' ? <Compass size={36} className="text-sky-300" /> : <Sparkles size={36} className="text-sky-300" />}
         </div>
       )}
 
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-3 flex items-start justify-between">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <div className="mb-2.5 sm:mb-3 flex items-start justify-between">
           <p className="text-xs font-bold uppercase tracking-wider text-sky-600">{categoryLabels[item.category]}</p>
           <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
         </div>
-        <h3 className="text-base font-extrabold text-slate-900">{item.equipment_name}</h3>
+        <h3 className="text-sm sm:text-base font-extrabold text-slate-900 line-clamp-1">{item.equipment_name}</h3>
         {item.price_note && (
-          <div className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-amber-600">
+          <div className="mt-1 flex items-center gap-1 text-xs sm:text-sm font-semibold text-amber-600">
             <IndianRupee size={13} />
-            <span>{item.price_note}</span>
+            <span className="truncate">{item.price_note}</span>
           </div>
         )}
-        <p className="mt-2 flex-1 text-sm text-slate-500">Owned by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}</p>
+        <p className="mt-2 flex-1 text-xs sm:text-sm text-slate-500">Owned by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}</p>
 
-        <div className="mt-5">
+        <div className="mt-4 sm:mt-5">
           {isOwn ? (
-            <div className="w-full rounded-xl bg-slate-50 py-3 text-center text-sm font-bold text-slate-400">Your listing</div>
+            <div className="w-full rounded-xl bg-slate-50 py-3 text-center text-xs sm:text-sm font-bold text-slate-400">Your listing</div>
           ) : requestStatus === 'pending' ? (
             <div className="flex gap-2">
-              <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-3 text-sm font-bold text-amber-600">Request sent</div>
+              <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-3 text-xs sm:text-sm font-bold text-amber-600">Request sent</div>
               <button
                 onClick={() => onCancelRequest(item)}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-3 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
+                className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2.5 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
                 title="Cancel request"
               >
                 <XCircle size={15} /> Cancel
@@ -661,7 +675,7 @@ function ItemCard({
             <button
               disabled={item.status !== 'available' || requestStatus === 'approved'}
               onClick={() => onRequest(item)}
-              className="w-full rounded-xl bg-slate-900 py-3 text-sm font-extrabold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              className="min-h-[44px] w-full rounded-xl bg-slate-900 py-3 text-xs sm:text-sm font-extrabold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
             >
               {item.status !== 'available' ? 'Currently borrowed' : requestStatus === 'approved' ? 'Approved ✓' : 'Request to borrow'}
             </button>
@@ -864,18 +878,18 @@ function AddItem({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <button onClick={onDone} className="mb-8 flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-sky-600"><ChevronLeft size={17} />Back to explore</button>
-      <div className="mb-8">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600"><PackagePlus size={24} /></div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Share an item</h1>
-        <p className="mt-2 text-slate-500">Give something useful a second life on campus.</p>
+      <button onClick={onDone} className="mb-6 sm:mb-8 flex min-h-[36px] items-center gap-2 text-xs sm:text-sm font-bold text-slate-500 hover:text-sky-600"><ChevronLeft size={17} />Back to explore</button>
+      <div className="mb-6 sm:mb-8">
+        <div className="mb-3 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600"><PackagePlus size={22} /></div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Share an item</h1>
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500">Give something useful a second life on campus.</p>
       </div>
-      <form onSubmit={submit} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="space-y-6">
+      <form onSubmit={submit} className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
+        <div className="space-y-5 sm:space-y-6">
           <Field label="What are you sharing?" placeholder="e.g. Scientific calculator" value={name} onChange={(e) => setName(e.target.value)} required />
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10">
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Category</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10">
               <option value="academics">Academics</option>
               <option value="electronics">Electronics</option>
               <option value="sports">Sports</option>
@@ -886,7 +900,7 @@ function AddItem({
           <ImageUploader onUploaded={setImageUrl} userId={ownerId} />
           {/* Price note — optional */}
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">
               Price / Terms <span className="text-xs font-normal text-slate-400">(optional)</span>
             </label>
             <div className="relative">
@@ -896,24 +910,24 @@ function AddItem({
                 placeholder="e.g. ₹50/day, free for 2 days, negotiable"
                 value={priceNote}
                 onChange={(e) => setPriceNote(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
               />
             </div>
           </div>
         </div>
-        {error && <div className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">{error}</div>}
-        <button disabled={loading} className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-70">
+        {error && <div className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">{error}</div>}
+        <button disabled={loading} className="mt-6 sm:mt-8 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70">
           {loading && <LoaderCircle size={17} className="animate-spin" />}
           List this item <ArrowRight size={17} />
         </button>
       </form>
 
       {/* ── My Listings ────────────────────────────── */}
-      <div className="mt-12">
-        <div className="mb-5 flex items-center justify-between">
+      <div className="mt-10 sm:mt-12">
+        <div className="mb-4 sm:mb-5 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-extrabold">Your listings</h2>
-            <p className="mt-0.5 text-sm text-slate-400">Items you've shared on campus</p>
+            <h2 className="text-lg sm:text-xl font-extrabold">Your listings</h2>
+            <p className="mt-0.5 text-xs sm:text-sm text-slate-400">Items you've shared on campus</p>
           </div>
           {myItems.length > 0 && <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-extrabold text-sky-700">{myItems.length} item{myItems.length !== 1 ? 's' : ''}</span>}
         </div>
@@ -925,30 +939,32 @@ function AddItem({
         ) : (
           <div className="space-y-3">
             {myItems.map((item) => (
-              <div key={item.equipment_id} className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300">
-                {item.image_url ? (
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100">
-                    <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-400">
-                    <Image size={22} />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-sm font-extrabold text-slate-900">{item.equipment_name}</h3>
-                  <p className="mt-0.5 text-xs text-slate-400">{categoryLabels[item.category]}</p>
-                  {item.price_note && (
-                    <p className="mt-0.5 flex items-center gap-0.5 text-xs font-semibold text-amber-600">
-                      <IndianRupee size={11} />{item.price_note}
-                    </p>
+              <div key={item.equipment_id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm transition hover:border-slate-300">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  {item.image_url ? (
+                    <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                      <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-400">
+                      <Image size={22} />
+                    </div>
                   )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-sm font-extrabold text-slate-900">{item.equipment_name}</h3>
+                    <p className="mt-0.5 text-xs text-slate-400">{categoryLabels[item.category]}</p>
+                    {item.price_note && (
+                      <p className="mt-0.5 flex items-center gap-0.5 text-xs font-semibold text-amber-600 truncate">
+                        <IndianRupee size={11} />{item.price_note}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
                   <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
                   <button
                     onClick={() => handleDelete(item.equipment_id)}
-                    className="flex items-center gap-1 rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
                     title="Remove listing"
                   >
                     <Trash2 size={16} />
@@ -1009,32 +1025,32 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
 
   return (
     <div>
-      <div className="mb-8">
-        <p className="mb-2 text-sm font-bold text-sky-600">Your activity</p>
-        <h1 className="text-3xl font-extrabold tracking-tight">Dashboard</h1>
-        <p className="mt-2 text-slate-500">Keep track of your lending and borrowing.</p>
+      <div className="mb-6 sm:mb-8">
+        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-bold text-sky-600">Your activity</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Dashboard</h1>
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500">Keep track of your lending and borrowing.</p>
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Outgoing requests */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6">
-            <h2 className="text-lg font-extrabold">My requests</h2>
-            <p className="mt-1 text-sm text-slate-500">Items you asked to borrow</p>
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+          <div className="mb-5 sm:mb-6">
+            <h2 className="text-base sm:text-lg font-extrabold">My requests</h2>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500">Items you asked to borrow</p>
           </div>
           {outgoing.length ? (
             <div className="space-y-3">
               {outgoing.map((request) => (
-                <div key={request.request_id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4">
+                <div key={request.request_id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3.5 sm:p-4">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-extrabold">{request.equipment.equipment_name}</h3>
-                    <p className="mt-1 text-xs text-slate-500">Owner: {request.owner.full_name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Owner: {request.owner.full_name}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 items-center justify-between sm:justify-end gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60">
                     <StatusBadge status={request.status} />
                     {request.status === 'pending' && (
                       <button
                         onClick={() => handleCancelOutgoing(request.request_id)}
-                        className="flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
+                        className="flex min-h-[36px] items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
                       >
                         <XCircle size={13} /> Cancel
                       </button>
@@ -1049,29 +1065,29 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
         </div>
 
         {/* Incoming requests */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6">
-            <h2 className="text-lg font-extrabold">Requests for my items</h2>
-            <p className="mt-1 text-sm text-slate-500">People waiting for your approval</p>
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+          <div className="mb-5 sm:mb-6">
+            <h2 className="text-base sm:text-lg font-extrabold">Requests for my items</h2>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500">People waiting for your approval</p>
           </div>
           {incoming.length ? (
             <div className="space-y-3">
               {incoming.map((request) => (
-                <div key={request.request_id} className="rounded-2xl bg-slate-50 p-4">
+                <div key={request.request_id} className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-extrabold">{request.equipment.equipment_name}</h3>
-                      <p className="mt-1 text-xs text-slate-500">{request.borrower.full_name} · Room {request.borrower.room_number}</p>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-extrabold truncate">{request.equipment.equipment_name}</h3>
+                      <p className="mt-0.5 text-xs text-slate-500">{request.borrower.full_name} · Room {request.borrower.room_number}</p>
                       {request.borrower.phone_number && (
-                        <p className="text-xs text-slate-400">📞 {request.borrower.phone_number}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">📞 {request.borrower.phone_number}</p>
                       )}
                     </div>
                     <StatusBadge status={request.status} />
                   </div>
                   {request.status === 'pending' && (
-                    <div className="mt-4 flex gap-2">
-                      <button onClick={() => handleUpdate(request.request_id, 'approved')} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 py-2 text-xs font-extrabold text-white hover:bg-emerald-600"><Check size={14} />Approve</button>
-                      <button onClick={() => handleUpdate(request.request_id, 'rejected')} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2 text-xs font-extrabold text-slate-500 hover:border-rose-200 hover:text-rose-600"><XCircle size={14} />Decline</button>
+                    <div className="mt-3.5 flex gap-2">
+                      <button onClick={() => handleUpdate(request.request_id, 'approved')} className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 py-2 text-xs font-extrabold text-white hover:bg-emerald-600"><Check size={14} />Approve</button>
+                      <button onClick={() => handleUpdate(request.request_id, 'rejected')} className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2 text-xs font-extrabold text-slate-500 hover:border-rose-200 hover:text-rose-600"><XCircle size={14} />Decline</button>
                     </div>
                   )}
                 </div>
@@ -1109,27 +1125,27 @@ function ProfilePage({ profile, setProfile, showToast }: { profile: Profile; set
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-8">
-        <p className="mb-2 text-sm font-bold text-sky-600">Your account</p>
-        <h1 className="text-3xl font-extrabold tracking-tight">Profile</h1>
-        <p className="mt-2 text-slate-500">Keep your details up to date for easy handoffs.</p>
+      <div className="mb-6 sm:mb-8">
+        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-bold text-sky-600">Your account</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Profile</h1>
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500">Keep your details up to date for easy handoffs.</p>
       </div>
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="mb-8 flex items-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-sky-100 text-xl font-extrabold text-sky-700">{getInitials(fullName)}</div>
-          <div><h2 className="text-xl font-extrabold">{fullName || 'Your name'}</h2><p className="mt-1 text-sm text-slate-400">CampusLend member</p></div>
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
+          <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-sky-100 text-lg sm:text-xl font-extrabold text-sky-700 shrink-0">{getInitials(fullName)}</div>
+          <div><h2 className="text-lg sm:text-xl font-extrabold text-slate-900">{fullName || 'Your name'}</h2><p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-400">CampusLend member</p></div>
         </div>
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           <Field label="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
           <Field label="Room number" value={room} onChange={(e) => setRoom(e.target.value)} />
           <Field label="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
-        <button onClick={save} disabled={saving} className="mt-8 flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-70">
+        <button onClick={save} disabled={saving} className="mt-6 sm:mt-8 flex min-h-[46px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-sky-600 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70">
           {saving && <LoaderCircle size={17} className="animate-spin" />}
           Save changes <Check size={17} />
         </button>
       </div>
-      <div className="mt-5 flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700">
+      <div className="mt-5 flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-xs sm:text-sm text-emerald-700">
         <ShieldCheck size={20} className="shrink-0" />
         <p><span className="font-extrabold">Your details are private.</span> Only your name and room number are shown when you list an item.</p>
       </div>
@@ -1145,10 +1161,10 @@ function StatusBadge({ status }: { status: RequestStatus }) {
 
 function Empty({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-6 py-12 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-4 sm:px-6 py-10 sm:py-12 text-center">
       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-400">{icon}</div>
       <h3 className="text-sm font-extrabold">{title}</h3>
-      <p className="mt-1 text-sm text-slate-400">{text}</p>
+      <p className="mt-1 text-xs sm:text-sm text-slate-400">{text}</p>
     </div>
   );
 }
@@ -1156,8 +1172,8 @@ function Empty({ icon, title, text }: { icon: ReactNode; title: string; text: st
 function Field({ label, type = 'text', placeholder, value, onChange, required }: { label: string; type?: string; placeholder?: string; value?: string; onChange?: (event: ChangeEvent<HTMLInputElement>) => void; required?: boolean }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-bold text-slate-700">{label}</label>
-      <input type={type} placeholder={placeholder} value={value} onChange={onChange} required={required} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" />
+      <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">{label}</label>
+      <input type={type} placeholder={placeholder} value={value} onChange={onChange} required={required} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" />
     </div>
   );
 }
