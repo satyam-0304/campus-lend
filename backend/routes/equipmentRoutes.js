@@ -9,7 +9,7 @@ const VALID_CATEGORIES = ['academics', 'electronics', 'sports', 'event_wear'];
 
 // Reusable select string — joins owner profile via FK
 const EQUIPMENT_SELECT =
-  'equipment_id, equipment_name, category, status, owner_id, image_url, price_note, created_at, ' +
+  'equipment_id, equipment_name, category, status, owner_id, image_url, price_note, quantity, created_at, ' +
   'owner:profiles!owner_id(id, full_name, room_number, phone_number)';
 
 // ── GET / ─────────────────────────────────────────────────────
@@ -63,9 +63,10 @@ router.post('/', authMiddleware, async (req, res) => {
       equipment_name: equipment_name.trim(),
       category,
       status: 'available',
-      owner_id: req.user.id,          // always the authenticated user — body value ignored
+      owner_id: req.user.id, // always the authenticated user — body value ignored
       image_url: image_url.trim(),
       price_note: price_note ? price_note.trim() : null,
+      quantity: typeof req.body.quantity === 'number' && req.body.quantity > 0 ? req.body.quantity : 1,
     })
     .select(EQUIPMENT_SELECT)
     .single();

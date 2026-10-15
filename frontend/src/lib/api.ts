@@ -56,6 +56,7 @@ export const api = {
     category: Category;
     image_url: string;
     price_note?: string | null;
+    quantity?: number;
   }): Promise<EquipmentWithOwner> {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_BASE_URL}/api/equipment`, {
@@ -93,6 +94,7 @@ export const api = {
   async createRequest(payload: {
     equipment_id: string;
     owner_id: string;
+    requested_quantity?: number;
   }): Promise<BorrowRequestWithDetails> {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_BASE_URL}/api/requests`, {

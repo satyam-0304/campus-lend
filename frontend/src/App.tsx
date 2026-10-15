@@ -806,6 +806,7 @@ function AddItem({
   const [category, setCategory] = useState<Category>('academics');
   const [imageUrl, setImageUrl] = useState('');
   const [priceNote, setPriceNote] = useState('');
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

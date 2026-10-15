@@ -10,7 +10,7 @@ router.use(authMiddleware);
 
 // Reusable select string — joins equipment name and both profile sides
 const REQUEST_SELECT =
-  'request_id, equipment_id, borrower_id, owner_id, status, created_at, ' +
+  'request_id, equipment_id, borrower_id, owner_id, status, created_at, requested_quantity, ' +
   'equipment:equipment_id(equipment_name), ' +
   'borrower:profiles!borrower_id(id, full_name, room_number, phone_number), ' +
   'owner:profiles!owner_id(id, full_name, room_number, phone_number)';
@@ -45,21 +45,24 @@ router.get('/dashboard', async (req, res) => {
 // Protected. Creates a borrow request.
 // Enforces: borrower_id = req.user.id, borrower ≠ owner, equipment must be available.
 router.post('/', async (req, res) => {
-  const { equipment_id, owner_id } = req.body;
+  const { equipment_id, owner_id, requested_quantity } = req.body;
 
   if (!equipment_id || !owner_id) {
     return res.status(400).json({ error: 'equipment_id and owner_id are required' });
   }
+
+  // Determine requested quantity, default to 1
+  const qty = typeof requested_quantity === 'number' && requested_quantity > 0 ? Math.floor(requested_quantity) : 1;
 
   // Prevent self-borrowing
   if (owner_id === req.user.id) {
     return res.status(400).json({ error: 'You cannot borrow your own item' });
   }
 
-  // Verify equipment exists and is available
+  // Verify equipment exists, is available, and has sufficient quantity
   const { data: equipment, error: eqError } = await serviceClient
     .from('equipment')
-    .select('equipment_id, status, owner_id')
+    .select('equipment_id, status, owner_id, quantity')
     .eq('equipment_id', equipment_id)
     .single();
 
@@ -69,14 +72,18 @@ router.post('/', async (req, res) => {
   if (equipment.status !== 'available') {
     return res.status(409).json({ error: 'Equipment is not currently available' });
   }
+  if (equipment.quantity < qty) {
+    return res.status(409).json({ error: `Only ${equipment.quantity} unit(s) available` });
+  }
 
   const { data, error } = await serviceClient
     .from('borrow_requests')
     .insert({
       equipment_id,
-      borrower_id: req.user.id,   // always the authenticated user — never trust the body
+      borrower_id: req.user.id, // always the authenticated user — never trust the body
       owner_id,
       status: 'pending',
+      requested_quantity: qty,
     })
     .select(REQUEST_SELECT)
     .single();
@@ -87,7 +94,7 @@ router.post('/', async (req, res) => {
 
 // ── PUT /:request_id ──────────────────────────────────────────
 // Protected. Owner-only: approve or reject a borrow request.
-// On approval, also updates equipment.status → 'borrowed'.
+// On approval, decrement equipment quantity and update status accordingly.
 router.put('/:request_id', async (req, res) => {
   const { request_id } = req.params;
   const { status } = req.body;
@@ -96,10 +103,10 @@ router.put('/:request_id', async (req, res) => {
     return res.status(400).json({ error: 'status must be "approved" or "rejected"' });
   }
 
-  // Fetch request to verify ownership
+  // Fetch request to verify ownership and retrieve requested quantity
   const { data: request, error: fetchError } = await serviceClient
     .from('borrow_requests')
-    .select('request_id, owner_id, equipment_id, status')
+    .select('request_id, owner_id, equipment_id, status, requested_quantity')
     .eq('request_id', request_id)
     .single();
 
@@ -120,16 +127,23 @@ router.put('/:request_id', async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
 
-  // If approved, mark the equipment as borrowed
+  // If approved, decrement equipment quantity and adjust status
   if (status === 'approved') {
-    const { error: eqError } = await serviceClient
+    const qtyRequested = request.requested_quantity || 1;
+    const { data: equip, error: eqErr } = await serviceClient
       .from('equipment')
-      .update({ status: 'borrowed' })
-      .eq('equipment_id', request.equipment_id);
-
-    if (eqError) {
-      // Request was updated; warn but still return success so the client is consistent
-      console.error('Failed to update equipment status after approval:', eqError.message);
+      .select('quantity, status')
+      .eq('equipment_id', request.equipment_id)
+      .single();
+    if (!eqErr && equip) {
+      const newQty = Math.max(0, equip.quantity - qtyRequested);
+      const newStatus = newQty > 0 ? 'available' : 'borrowed';
+      await serviceClient
+        .from('equipment')
+        .update({ quantity: newQty, status: newStatus })
+        .eq('equipment_id', request.equipment_id);
+    } else {
+      console.error('Failed to fetch equipment for quantity update:', eqErr?.message);
     }
   }
 

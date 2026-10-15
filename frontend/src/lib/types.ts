@@ -1,3 +1,5 @@
+// Types for CampusLend frontend
+
 export type Category = 'academics' | 'electronics' | 'sports' | 'event_wear';
 export type EquipmentStatus = 'available' | 'borrowed';
 export type RequestStatus = 'pending' | 'approved' | 'rejected';
@@ -17,6 +19,7 @@ export type EquipmentRow = {
   owner_id: string;
   image_url: string | null;
   price_note: string | null;
+  quantity: number; // Number of identical items available
   created_at: string;
 };
 
@@ -30,6 +33,7 @@ export type BorrowRequestRow = {
   borrower_id: string;
   owner_id: string;
   status: RequestStatus;
+  requested_quantity: number; // Units requested
   created_at: string;
 };
 
