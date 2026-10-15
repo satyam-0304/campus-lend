@@ -845,13 +845,13 @@ function AddItem({
         category: itemCat,
         image_url: itemImageUrl,
         price_note: itemPriceNote || null,
+        quantity,
       });
       setMyItems((prev) => [newItem, ...prev]);
       showToast('Item added to the campus library 🎉');
       // Reset form
       setName('');
-      setCategory('academics');
-      setImageUrl('');
+      setQuantity(1);
       setPriceNote('');
     } catch (err: any) {
       setError(err?.message || 'Failed to add item. Please ensure you are logged in.');
@@ -915,6 +915,18 @@ function AddItem({
               />
             </div>
           </div>
+{/* Quantity Available */}
+<div>
+  <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Quantity Available</label>
+  <input
+    type="number"
+    min={1}
+    value={quantity}
+    onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+    className="w-full rounded-xl border border-slate-200 bg-white py-3 px-4 text-base sm:text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+    required
+  />
+</div>
         </div>
         {error && <div className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">{error}</div>}
         <button disabled={loading} className="mt-6 sm:mt-8 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70">
