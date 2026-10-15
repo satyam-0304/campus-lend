@@ -9,7 +9,7 @@ const VALID_CATEGORIES = ['academics', 'electronics', 'sports', 'event_wear'];
 
 // Reusable select string — joins owner profile via FK
 const EQUIPMENT_SELECT =
-  'equipment_id, equipment_name, category, status, owner_id, image_url, price_note, quantity, created_at, ' +
+  'equipment_id, equipment_name, category, status, owner_id, image_url, price_note, created_at, ' +
   'owner:profiles!owner_id(id, full_name, room_number, phone_number)';
 
 // ── GET / ─────────────────────────────────────────────────────
