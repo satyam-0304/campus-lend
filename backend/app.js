@@ -13,7 +13,23 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── CORS ───────────────────────────────────────────────────────
-app.use(cors());
+// FRONTEND_ORIGIN can be a comma-separated list, e.g.:
+//   https://campus-lend.vercel.app,http://localhost:5173
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim());
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow server-to-server / curl requests (no Origin header)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+  })
+);
 
 
 // ── Body parser ────────────────────────────────────────────────
