@@ -2,16 +2,19 @@ import {
   ArrowRight,
   Bell,
   BookOpen,
+  Building2,
   Check,
   ChevronDown,
   ChevronLeft,
   Compass,
   FileText,
+  GraduationCap,
   Image,
   IndianRupee,
   Laptop,
   LoaderCircle,
   LogOut,
+  MapPin,
   Menu,
   PackagePlus,
   Search,
@@ -35,6 +38,7 @@ import type {
 } from '@/lib/types';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
+import { PEC_HOSTELS, parsePecEmail, isValidPecEmail } from '@/lib/pecEmail';
 
 type Page = 'explore' | 'add' | 'dashboard' | 'profile';
 
@@ -146,7 +150,14 @@ function App() {
 
   // Called by Explore/AddItem to check if profile is complete before acting
   const requireProfile = (action: PendingAction): boolean => {
-    if (!profile?.room_number || !profile?.phone_number) {
+    const hasPhone = Boolean(profile?.phone_number?.trim());
+    const hasSid = Boolean(profile?.student_id && /^\d{8}$/.test(profile.student_id.trim()));
+    const hasResidence =
+      profile?.residence_type === 'day_scholar'
+        ? Boolean(profile?.address?.trim())
+        : Boolean(profile?.room_number?.trim() && profile?.hostel_name?.trim());
+
+    if (!hasPhone || !hasSid || !hasResidence) {
       setPendingAction(action);
       setProfileModalOpen(true);
       return false; // not complete — caller should abort
@@ -203,9 +214,22 @@ function App() {
 
   // Profile fetches in background — safeProfile fallback below handles the
   // null case so we never block rendering on this network call.
+  const userPecMeta = session?.user?.email ? parsePecEmail(session.user.email) : null;
 
   // profile can be null briefly — guard downstream components with profile!
-  const safeProfile: Profile = profile ?? { id: session.user.id, full_name: session.user.user_metadata?.full_name ?? '', room_number: '', phone_number: '' };
+  const safeProfile: Profile = profile ?? {
+    id: session.user.id,
+    full_name: session.user.user_metadata?.full_name || userPecMeta?.formattedName || '',
+    room_number: '',
+    phone_number: '',
+    student_id: session.user.user_metadata?.student_id || '',
+    degree: session.user.user_metadata?.degree || userPecMeta?.degree || '',
+    batch_year: session.user.user_metadata?.batch_year || userPecMeta?.batchYear || '',
+    branch: session.user.user_metadata?.branch || userPecMeta?.branchName || userPecMeta?.branchCode || '',
+    residence_type: '',
+    hostel_name: '',
+    address: '',
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -238,13 +262,21 @@ function App() {
           />
         )}
         {page === 'dashboard' && <Dashboard userId={session.user.id} showToast={showToast} />}
-        {page === 'profile' && <ProfilePage profile={safeProfile} setProfile={setProfile} showToast={showToast} />}
+        {page === 'profile' && (
+          <ProfilePage
+            profile={safeProfile}
+            setProfile={setProfile}
+            showToast={showToast}
+            userEmail={session.user.email}
+          />
+        )}
       </main>
 
       {/* Profile completion modal — shown when room/phone not filled yet */}
       {profileModalOpen && (
         <ProfileCompletionModal
-          initialName={safeProfile.full_name}
+          profile={safeProfile}
+          userEmail={session.user.email}
           onSave={handleProfileSaved}
           onCancel={() => { setProfileModalOpen(false); setPendingAction(null); }}
           showToast={showToast}
@@ -264,30 +296,87 @@ function App() {
 // ── Profile Completion Modal ────────────────────────────────────
 
 function ProfileCompletionModal({
-  initialName,
+  profile,
+  userEmail,
   onSave,
   onCancel,
   showToast,
 }: {
-  initialName: string;
+  profile: Profile;
+  userEmail?: string;
   onSave: (p: Profile) => void;
   onCancel: () => void;
   showToast: (msg: string) => void;
 }) {
-  const [fullName, setFullName] = useState(initialName);
-  const [room, setRoom] = useState('');
-  const [phone, setPhone] = useState('');
+  const parsed = useMemo(() => parsePecEmail(userEmail || ''), [userEmail]);
+  const degree = profile.degree || parsed.degree || 'B.Tech';
+  const branch = profile.branch || parsed.branchName || parsed.branchCode || 'PEC';
+  const batchYear = profile.batch_year || parsed.batchYear || '2025';
+
+  const [fullName, setFullName] = useState(profile.full_name || parsed.formattedName);
+  const [studentId, setStudentId] = useState(profile.student_id || '');
+  const [phone, setPhone] = useState(profile.phone_number || '');
+  const [residenceType, setResidenceType] = useState<'hosteller' | 'day_scholar'>(
+    profile.residence_type === 'day_scholar' ? 'day_scholar' : 'hosteller'
+  );
+  const [hostel, setHostel] = useState(profile.hostel_name || '');
+  const [room, setRoom] = useState(profile.room_number || '');
+  const [address, setAddress] = useState(profile.address || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    if (!room.trim()) { setError('Room number is required'); return; }
+
+    if (!fullName.trim()) {
+      setError('Please provide your full name');
+      return;
+    }
+
+    const cleanSid = studentId.trim();
+    if (!/^\d{8}$/.test(cleanSid)) {
+      setError('Student ID (SID) must be exactly 8 digits (e.g. 25103092)');
+      return;
+    }
+
+    const cleanPhone = phone.trim();
+    if (!cleanPhone || cleanPhone.replace(/\D/g, '').length < 10) {
+      setError('Please provide a valid 10-digit mobile number for handoffs');
+      return;
+    }
+
+    if (residenceType === 'hosteller') {
+      if (!hostel) {
+        setError('Please select your PEC Hostel');
+        return;
+      }
+      if (!room.trim()) {
+        setError('Please enter your hostel room number');
+        return;
+      }
+    } else {
+      if (!address.trim()) {
+        setError('Please enter your local address / sector');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      const data = await api.updateMyProfile({ full_name: fullName, room_number: room, phone_number: phone });
-      showToast('Profile saved!');
+      const data = await api.updateMyProfile({
+        full_name: fullName.trim(),
+        student_id: cleanSid,
+        phone_number: cleanPhone,
+        degree,
+        batch_year: batchYear,
+        branch,
+        residence_type: residenceType,
+        hostel_name: residenceType === 'hosteller' ? hostel : '',
+        room_number: residenceType === 'hosteller' ? room.trim() : '',
+        address: residenceType === 'day_scholar' ? address.trim() : '',
+      });
+      showToast('Profile completed!');
       onSave(data);
     } catch (err: any) {
       setError(err?.message || 'Could not save profile. Please try again.');
@@ -298,15 +387,15 @@ function ProfileCompletionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-3 sm:p-5 backdrop-blur-sm">
-      <div className="my-auto w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-3xl bg-white p-5 sm:p-8 shadow-2xl ring-1 ring-slate-100 animate-[fadeSlideUp_0.2s_ease-out]">
+      <div className="my-auto w-full max-w-lg max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-3xl bg-white p-5 sm:p-8 shadow-2xl ring-1 ring-slate-100 animate-[fadeSlideUp_0.2s_ease-out]">
         <div className="mb-5 flex items-start justify-between">
           <div>
             <div className="mb-3 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
-              <Sparkles size={22} />
+              <GraduationCap size={22} />
             </div>
-            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">One quick step</h2>
+            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">Complete your student profile</h2>
             <p className="mt-1 text-xs sm:text-sm leading-6 text-slate-500">
-              We need your room number so other students can find you for handoffs.
+              CampusLend uses this info so peers can verify items and coordinate handoffs.
             </p>
           </div>
           <button
@@ -316,11 +405,129 @@ function ProfileCompletionModal({
             <X size={20} />
           </button>
         </div>
+
+        {/* Auto-detected PEC badge banner */}
+        <div className="mb-5 rounded-2xl bg-sky-50/70 border border-sky-100 p-3.5 flex items-center gap-3 text-xs sm:text-sm">
+          <div className="h-9 w-9 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 font-extrabold">
+            PEC
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold text-slate-900 truncate">
+              {degree} {branch}
+            </p>
+            <p className="text-xs text-sky-700 truncate">
+              Joining Batch {batchYear} • {userEmail || 'Verified PEC Student'}
+            </p>
+          </div>
+        </div>
+
         {error && <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">{error}</div>}
+
         <form onSubmit={submit} className="space-y-4">
-          <Field label="Full name" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-          <Field label="Room number" placeholder="204-B" value={room} onChange={(e) => setRoom(e.target.value)} required />
-          <Field label="Phone number (optional)" placeholder="+91 98765 43210" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Field label="Full name" placeholder="Satyam Kandpal" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+
+          <div>
+            <div className="flex justify-between items-center mb-1.5 sm:mb-2">
+              <label className="text-xs sm:text-sm font-bold text-slate-700">Student ID (SID)</label>
+              <span className={`text-xs ${studentId.length === 8 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                {studentId.length}/8 digits
+              </span>
+            </div>
+            <input
+              type="text"
+              placeholder="e.g. 25103092"
+              value={studentId}
+              maxLength={8}
+              onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 8))}
+              required
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Mobile number</label>
+            <input
+              type="tel"
+              placeholder="9876543210"
+              value={phone}
+              maxLength={10}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              required
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+            />
+          </div>
+
+          {/* Residence Type Selector */}
+          <div>
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Campus Residence</label>
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => setResidenceType('hosteller')}
+                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
+                  residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <Building2 size={15} />
+                Hosteller
+              </button>
+              <button
+                type="button"
+                onClick={() => setResidenceType('day_scholar')}
+                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
+                  residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <MapPin size={15} />
+                Day Scholar
+              </button>
+            </div>
+          </div>
+
+          {residenceType === 'hosteller' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in duration-150">
+              <div>
+                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">PEC Hostel</label>
+                <select
+                  value={hostel}
+                  onChange={(e) => setHostel(e.target.value)}
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base sm:text-sm font-medium outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                >
+                  <option value="">Select hostel...</option>
+                  {PEC_HOSTELS.map((h) => (
+                    <option key={h} value={h}>
+                      {h} Hostel
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Room number</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 204-B"
+                  value={room}
+                  onChange={(e) => setRoom(e.target.value)}
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="animate-in fade-in duration-150">
+              <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Locality / Address</label>
+              <input
+                type="text"
+                placeholder="e.g. Sector 15-D, Chandigarh"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+              />
+            </div>
+          )}
+
           <button
             disabled={loading}
             className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70"
@@ -347,14 +554,30 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!isValidPecEmail(cleanEmail)) {
+      setError('Access restricted: Please enter your valid @pec.edu.in institute email.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (mode === 'signup') {
+        const parsed = parsePecEmail(cleanEmail);
+        const fullName = name.trim() || parsed.formattedName;
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
-          options: { data: { full_name: name } },
+          options: {
+            data: {
+              full_name: fullName,
+              degree: parsed.degree,
+              batch_year: parsed.batchYear,
+              branch: parsed.branchName || parsed.branchCode,
+            },
+          },
         });
 
         if (signUpError) {
@@ -369,7 +592,10 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
           setError('Signup failed. Please try again.');
         }
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
         if (signInError) {
           setError(signInError.message);
           setLoading(false);
@@ -1125,20 +1351,72 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
 
 // ── Profile ────────────────────────────────────────────────
 
-function ProfilePage({ profile, setProfile, showToast }: { profile: Profile; setProfile: (p: Profile) => void; showToast: (msg: string) => void }) {
-  const [fullName, setFullName] = useState(profile.full_name);
-  const [room, setRoom] = useState(profile.room_number);
-  const [phone, setPhone] = useState(profile.phone_number);
+function ProfilePage({
+  profile,
+  setProfile,
+  showToast,
+  userEmail,
+}: {
+  profile: Profile;
+  setProfile: (p: Profile) => void;
+  showToast: (msg: string) => void;
+  userEmail?: string;
+}) {
+  const parsed = useMemo(() => parsePecEmail(userEmail || ''), [userEmail]);
+  const degree = profile.degree || parsed.degree || 'B.Tech';
+  const branch = profile.branch || parsed.branchName || parsed.branchCode || 'PEC';
+  const batchYear = profile.batch_year || parsed.batchYear || '2025';
+
+  const [fullName, setFullName] = useState(profile.full_name || parsed.formattedName);
+  const [studentId, setStudentId] = useState(profile.student_id || '');
+  const [phone, setPhone] = useState(profile.phone_number || '');
+  const [residenceType, setResidenceType] = useState<'hosteller' | 'day_scholar'>(
+    profile.residence_type === 'day_scholar' ? 'day_scholar' : 'hosteller'
+  );
+  const [hostel, setHostel] = useState(profile.hostel_name || '');
+  const [room, setRoom] = useState(profile.room_number || '');
+  const [address, setAddress] = useState(profile.address || '');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const save = async () => {
+    setError('');
+
+    const cleanSid = studentId.trim();
+    if (cleanSid && !/^\d{8}$/.test(cleanSid)) {
+      setError('Student ID (SID) must be exactly 8 digits (e.g. 25103092)');
+      return;
+    }
+
+    if (residenceType === 'hosteller' && (!hostel || !room.trim())) {
+      setError('Please provide your PEC hostel and room number');
+      return;
+    }
+
+    if (residenceType === 'day_scholar' && !address.trim()) {
+      setError('Please provide your residential locality / address');
+      return;
+    }
+
     setSaving(true);
     try {
-      const data = await api.updateMyProfile({ full_name: fullName, room_number: room, phone_number: phone });
+      const data = await api.updateMyProfile({
+        full_name: fullName.trim(),
+        student_id: cleanSid,
+        phone_number: phone.trim(),
+        degree,
+        batch_year: batchYear,
+        branch,
+        residence_type: residenceType,
+        hostel_name: residenceType === 'hosteller' ? hostel : '',
+        room_number: residenceType === 'hosteller' ? room.trim() : '',
+        address: residenceType === 'day_scholar' ? address.trim() : '',
+      });
       setProfile(data);
       showToast('Profile changes saved');
     } catch (err: any) {
-      showToast(err?.message || 'Could not save profile. Please try again.');
+      setError(err?.message || 'Could not save profile. Please try again.');
+      showToast(err?.message || 'Could not save profile.');
     } finally {
       setSaving(false);
     }
@@ -1151,24 +1429,147 @@ function ProfilePage({ profile, setProfile, showToast }: { profile: Profile; set
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Profile</h1>
         <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500">Keep your details up to date for easy handoffs.</p>
       </div>
+
       <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
-          <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-sky-100 text-lg sm:text-xl font-extrabold text-sky-700 shrink-0">{getInitials(fullName)}</div>
-          <div><h2 className="text-lg sm:text-xl font-extrabold text-slate-900">{fullName || 'Your name'}</h2><p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-400">CampusLend member</p></div>
+          <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-sky-100 text-lg sm:text-xl font-extrabold text-sky-700 shrink-0">
+            {getInitials(fullName)}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
+              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">{fullName || 'Your name'}</h2>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-700 border border-emerald-200">
+                PEC Verified
+              </span>
+            </div>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500 font-medium">
+              {degree} {branch} • Batch of {batchYear}
+            </p>
+            {userEmail && <p className="text-xs text-slate-400 mt-0.5">{userEmail}</p>}
+          </div>
         </div>
+
+        {error && (
+          <div className="mb-5 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">
+            {error}
+          </div>
+        )}
+
         <div className="space-y-4 sm:space-y-5">
           <Field label="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          <Field label="Room number" value={room} onChange={(e) => setRoom(e.target.value)} />
-          <Field label="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} />
+
+          <div>
+            <div className="flex justify-between items-center mb-1.5 sm:mb-2">
+              <label className="text-xs sm:text-sm font-bold text-slate-700">Student ID (SID)</label>
+              <span className={`text-xs ${studentId.length === 8 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                {studentId.length}/8 digits
+              </span>
+            </div>
+            <input
+              type="text"
+              placeholder="e.g. 25103092"
+              value={studentId}
+              maxLength={8}
+              onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 8))}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Phone number</label>
+            <input
+              type="tel"
+              placeholder="+91 98765 43210"
+              value={phone}
+              maxLength={10}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Campus Residence</label>
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 mb-3">
+              <button
+                type="button"
+                onClick={() => setResidenceType('hosteller')}
+                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
+                  residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <Building2 size={15} />
+                Hosteller
+              </button>
+              <button
+                type="button"
+                onClick={() => setResidenceType('day_scholar')}
+                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
+                  residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <MapPin size={15} />
+                Day Scholar
+              </button>
+            </div>
+
+            {residenceType === 'hosteller' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">PEC Hostel</label>
+                  <select
+                    value={hostel}
+                    onChange={(e) => setHostel(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base sm:text-sm font-medium outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                  >
+                    <option value="">Select hostel...</option>
+                    {PEC_HOSTELS.map((h) => (
+                      <option key={h} value={h}>
+                        {h} Hostel
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Room number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 204-B"
+                    value={room}
+                    onChange={(e) => setRoom(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Locality / Address</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Sector 15-D, Chandigarh"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                />
+              </div>
+            )}
+          </div>
         </div>
-        <button onClick={save} disabled={saving} className="mt-6 sm:mt-8 flex min-h-[46px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-sky-600 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70">
+
+        <button
+          onClick={save}
+          disabled={saving}
+          className="mt-6 sm:mt-8 flex min-h-[46px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-sky-600 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70"
+        >
           {saving && <LoaderCircle size={17} className="animate-spin" />}
           Save changes <Check size={17} />
         </button>
       </div>
+
       <div className="mt-5 flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-xs sm:text-sm text-emerald-700">
         <ShieldCheck size={20} className="shrink-0" />
-        <p><span className="font-extrabold">Your details are private.</span> Only your name and room number are shown when you list an item.</p>
+        <p>
+          <span className="font-extrabold">Your details are verified by PEC domain.</span> Only your name and room/location are shown when you list an item to peers.
+        </p>
       </div>
     </div>
   );

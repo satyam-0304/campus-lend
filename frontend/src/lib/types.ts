@@ -4,11 +4,20 @@ export type Category = 'academics' | 'electronics' | 'sports' | 'event_wear';
 export type EquipmentStatus = 'available' | 'borrowed';
 export type RequestStatus = 'pending' | 'approved' | 'rejected';
 
+export type ResidenceType = 'hosteller' | 'day_scholar';
+
 export type Profile = {
   id: string;
   full_name: string;
   room_number: string;
   phone_number: string;
+  student_id?: string;
+  degree?: string;
+  batch_year?: string;
+  branch?: string;
+  residence_type?: ResidenceType | '';
+  hostel_name?: string;
+  address?: string;
 };
 
 export type EquipmentRow = {

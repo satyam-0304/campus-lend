@@ -136,11 +136,7 @@ export const api = {
     return handleResponse<Profile>(res);
   },
 
-  async updateMyProfile(updates: {
-    full_name?: string;
-    room_number?: string;
-    phone_number?: string;
-  }): Promise<Profile> {
+  async updateMyProfile(updates: Partial<Omit<Profile, 'id'>>): Promise<Profile> {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_BASE_URL}/api/profiles/me`, {
       method: 'PUT',

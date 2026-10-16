@@ -37,6 +37,11 @@ async function authMiddleware(req, res, next) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 
+  const email = (data.user.email || '').toLowerCase().trim();
+  if (!email.endsWith('@pec.edu.in')) {
+    return res.status(403).json({ error: 'Access restricted: Account email must be an official @pec.edu.in address' });
+  }
+
   req.user = data.user;
   next();
 }

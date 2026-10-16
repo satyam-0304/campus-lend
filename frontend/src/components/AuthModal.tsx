@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { ArrowRight, LoaderCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { isValidPecEmail, parsePecEmail } from '../lib/pecEmail';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -27,14 +28,31 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!isValidPecEmail(cleanEmail)) {
+      setError('Access restricted: Please use your official @pec.edu.in institute email.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (mode === 'signup') {
+        const parsed = parsePecEmail(cleanEmail);
+        const fullName = name.trim() || parsed.formattedName;
+
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
-          options: { data: { full_name: name } },
+          options: {
+            data: {
+              full_name: fullName,
+              degree: parsed.degree,
+              batch_year: parsed.batchYear,
+              branch: parsed.branchName || parsed.branchCode,
+            },
+          },
         });
 
         if (signUpError) {
@@ -50,7 +68,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
           setError('Signup failed. Please try again.');
         }
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
         if (signInError) {
           setError(signInError.message);
           setLoading(false);
@@ -140,10 +161,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
           )}
 
           <div>
-            <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Email</label>
+            <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">PEC Email</label>
             <input
               type="email"
-              placeholder="john@gmail.com"
+              placeholder="satyamkandpal.bt25cse@pec.edu.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
