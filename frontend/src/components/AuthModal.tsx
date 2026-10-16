@@ -164,7 +164,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
             <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">PEC Email</label>
             <input
               type="email"
-              placeholder="satyamkandpal.bt25cse@pec.edu.in"
+              placeholder="student.bt24cse@pec.edu.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

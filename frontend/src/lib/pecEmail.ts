@@ -60,7 +60,7 @@ export function isValidPecEmail(email: string): boolean {
 }
 
 /**
- * Parses a PEC email like 'satyamkandpal.bt25cse@pec.edu.in'
+ * Parses a PEC email like 'student.bt24cse@pec.edu.in'
  * and extracts degree, batch year, branch, and suggested name.
  */
 export function parsePecEmail(email: string): ParsedPecEmail {
@@ -86,7 +86,7 @@ export function parsePecEmail(email: string): ParsedPecEmail {
   const localPart = clean.slice(0, -PEC_DOMAIN.length);
 
   // Standard student email pattern: <name>.<degree><year><branch>
-  // e.g. satyamkandpal.bt25cse
+  // e.g. student.bt24cse
   const studentPattern = /^([a-z0-9_-]+)\.([a-z]+)(\d{2})([a-z]+)$/i;
   const match = localPart.match(studentPattern);
 
@@ -97,7 +97,7 @@ export function parsePecEmail(email: string): ParsedPecEmail {
     const branchName = BRANCH_MAP[rawBranch] || rawBranch.toUpperCase();
     const branchCode = rawBranch.toUpperCase();
 
-    // Format raw name like 'satyamkandpal' -> 'Satyamkandpal'
+    // Format raw name like 'student' -> 'Student'
     const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
     return {

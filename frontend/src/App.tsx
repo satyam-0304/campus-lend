@@ -336,7 +336,7 @@ function ProfileCompletionModal({
 
     const cleanSid = studentId.trim();
     if (!/^\d{8}$/.test(cleanSid)) {
-      setError('Student ID (SID) must be exactly 8 digits (e.g. 25103092)');
+      setError('Student ID (SID) must be exactly 8 digits');
       return;
     }
 
@@ -424,7 +424,7 @@ function ProfileCompletionModal({
         {error && <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">{error}</div>}
 
         <form onSubmit={submit} className="space-y-4">
-          <Field label="Full name" placeholder="Satyam Kandpal" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+          <Field label="Full name" placeholder="Your full name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
 
           <div>
             <div className="flex justify-between items-center mb-1.5 sm:mb-2">
@@ -435,7 +435,7 @@ function ProfileCompletionModal({
             </div>
             <input
               type="text"
-              placeholder="e.g. 25103092"
+              placeholder="Enter 8-digit SID"
               value={studentId}
               maxLength={8}
               onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 8))}
@@ -1384,7 +1384,7 @@ function ProfilePage({
 
     const cleanSid = studentId.trim();
     if (cleanSid && !/^\d{8}$/.test(cleanSid)) {
-      setError('Student ID (SID) must be exactly 8 digits (e.g. 25103092)');
+      setError('Student ID (SID) must be exactly 8 digits');
       return;
     }
 
@@ -1467,7 +1467,7 @@ function ProfilePage({
             </div>
             <input
               type="text"
-              placeholder="e.g. 25103092"
+              placeholder="Enter 8-digit SID"
               value={studentId}
               maxLength={8}
               onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 8))}
