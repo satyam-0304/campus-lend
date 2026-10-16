@@ -19,21 +19,34 @@ const REQUEST_SELECT =
 // Protected. Returns { borrowed: [...], lending: [...] } for current user.
 // NOTE: must be defined before /:request_id to avoid route conflict.
 router.get('/dashboard', async (req, res) => {
-  const [borrowedResult, lendingResult] = await Promise.all([
-    serviceClient
-      .from('borrow_requests')
-      .select(REQUEST_SELECT)
-      .eq('borrower_id', req.user.id)
-      .order('created_at', { ascending: false }),
-    serviceClient
-      .from('borrow_requests')
-      .select(REQUEST_SELECT)
-      .eq('owner_id', req.user.id)
-      .order('created_at', { ascending: false }),
-  ]);
+  let borrowedResult, lendingResult;
 
-  if (borrowedResult.error) return res.status(500).json({ error: borrowedResult.error.message });
-  if (lendingResult.error) return res.status(500).json({ error: lendingResult.error.message });
+  try {
+    [borrowedResult, lendingResult] = await Promise.all([
+      serviceClient
+        .from('borrow_requests')
+        .select(REQUEST_SELECT)
+        .eq('borrower_id', req.user.id)
+        .order('created_at', { ascending: false }),
+      serviceClient
+        .from('borrow_requests')
+        .select(REQUEST_SELECT)
+        .eq('owner_id', req.user.id)
+        .order('created_at', { ascending: false }),
+    ]);
+  } catch (err) {
+    console.error('Dashboard query threw:', err);
+    return res.status(503).json({ error: 'Dashboard temporarily unavailable — please retry' });
+  }
+
+  if (borrowedResult.error) {
+    console.error('Borrowed query error:', borrowedResult.error.message);
+    return res.status(503).json({ error: borrowedResult.error.message });
+  }
+  if (lendingResult.error) {
+    console.error('Lending query error:', lendingResult.error.message);
+    return res.status(503).json({ error: lendingResult.error.message });
+  }
 
   res.json({
     borrowed: borrowedResult.data,

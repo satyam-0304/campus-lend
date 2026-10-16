@@ -162,11 +162,19 @@ function App() {
     // will re-attempt via pendingAction state (passed down as prop)
   };
 
+  // While auth state is resolving, show the landing page so the LCP element
+  // (hero h1) paints immediately instead of a blank spinner.
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <LoaderCircle size={28} className="animate-spin text-sky-500" />
-      </div>
+      <>
+        <LandingPage onLogin={() => openAuth('login')} onSignUp={() => openAuth('signup')} />
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          initialMode={authMode}
+          onSuccess={showToast}
+        />
+      </>
     );
   }
 
@@ -193,14 +201,8 @@ function App() {
     );
   }
 
-  // Show spinner while profile is being fetched (first load after login)
-  if (profileLoading && !profile) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <LoaderCircle size={28} className="animate-spin text-sky-500" />
-      </div>
-    );
-  }
+  // Profile fetches in background — safeProfile fallback below handles the
+  // null case so we never block rendering on this network call.
 
   // profile can be null briefly — guard downstream components with profile!
   const safeProfile: Profile = profile ?? { id: session.user.id, full_name: session.user.user_metadata?.full_name ?? '', room_number: '', phone_number: '' };
@@ -564,7 +566,8 @@ function Explore({
     }
   };
 
-  if (loading) return <CenteredSpinner />;
+  // Do NOT block here — render the hero h1 + search UI immediately.
+  // The grid area below shows an inline spinner while items load.
 
   return (
     <div>
@@ -596,7 +599,12 @@ function Explore({
         <h2 className="text-base sm:text-lg font-extrabold">Available near you</h2>
         <span className="text-xs sm:text-sm font-semibold text-slate-400">{filtered.length} items</span>
       </div>
-      {filtered.length ? (
+      {/* Grid — shows inline spinner while loading so the hero above is already visible */}
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <LoaderCircle size={28} className="animate-spin text-sky-400" />
+        </div>
+      ) : filtered.length ? (
         <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
             <ItemCard
