@@ -66,11 +66,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
-        className="relative my-auto w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-3xl bg-white p-5 sm:p-8 shadow-2xl ring-1 ring-slate-100"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+        <div
+          className="relative w-full max-w-md rounded-3xl bg-white p-5 sm:p-8 shadow-2xl ring-1 ring-slate-100"
+          onClick={(e) => e.stopPropagation()}
+        >
         <button
           onClick={onClose}
           className="absolute right-3 top-3 sm:right-4 sm:top-4 flex h-11 w-11 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
@@ -175,6 +176,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
         <p className="mt-4 sm:mt-5 text-center text-xs leading-5 text-slate-400">
           By continuing, you agree to keep your campus community safe and respectful.
         </p>
+        </div>
       </div>
     </div>
   );
