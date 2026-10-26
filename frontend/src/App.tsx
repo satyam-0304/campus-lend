@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   ArrowRight,
   Bell,
   BookOpen,
@@ -35,6 +36,7 @@ import {
   UserRound,
   X,
   XCircle,
+  ZoomIn,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -62,6 +64,7 @@ type PendingAction =
         name: string;
         category: Category;
         imageUrl: string;
+        imageBackUrl: string;
         priceNote: string;
         quantity: number;
         listingType: ListingType;
@@ -890,137 +893,239 @@ function ItemCard({
 }) {
   const requestStatus = requestEntry?.status;
   const isSell = item.listing_type === 'sell';
+  const hasBack = Boolean(item.image_back_url);
+  const [activeView, setActiveView] = useState<'front' | 'back'>('front');
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxView, setLightboxView] = useState<'front' | 'back'>('front');
+
+  const activeImg = activeView === 'front' ? item.image_url : item.image_back_url;
+  const lightboxImg = lightboxView === 'front' ? item.image_url : item.image_back_url;
+
+  // Close lightbox on Escape
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [lightboxOpen]);
 
   return (
-    <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/60 overflow-hidden">
-      {/* Item image or category icon */}
-      <div className="relative">
-        {item.image_url ? (
-          <div className="h-44 sm:h-48 w-full overflow-hidden bg-slate-100">
-            <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
-          </div>
-        ) : (
-          <div className="flex h-44 sm:h-48 w-full items-center justify-center bg-slate-50">
-            {item.category === 'electronics' ? <Laptop size={36} className="text-sky-300" /> : item.category === 'academics' ? <BookOpen size={36} className="text-sky-300" /> : item.category === 'sports' ? <Compass size={36} className="text-sky-300" /> : <Sparkles size={36} className="text-sky-300" />}
-          </div>
-        )}
-
-        {/* Listing Type Tag on Image */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5">
-          {isSell ? (
-            <span className="flex items-center gap-1 rounded-full bg-violet-600/95 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
-              <Tag size={11} /> For Sale
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 rounded-full bg-teal-600/95 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
-              <Clock size={11} /> For Rent
-            </span>
-          )}
-        </div>
-
-        {/* Quantity Badge */}
-        {typeof item.quantity === 'number' && item.quantity > 0 && (
-          <div className="absolute top-3 right-3">
-            <span className="rounded-full bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm border border-slate-200/50">
-              {item.quantity} in stock
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <div className="mb-2 flex items-start justify-between">
-          <p className="text-xs font-bold uppercase tracking-wider text-sky-600">{categoryLabels[item.category]}</p>
-          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
-        </div>
-
-        <h3 className="text-base font-extrabold text-slate-900 line-clamp-1">{item.equipment_name}</h3>
-
-        {/* Pricing display */}
-        <div className="mt-2.5">
-          {isSell ? (
-            <div className="flex items-center gap-1.5">
-              <span className="text-lg font-black text-slate-900 flex items-center">
-                <IndianRupee size={16} />{item.sale_price != null ? item.sale_price : (item.price_note || 'Negotiable')}
-              </span>
-              <span className="text-[11px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
-                One-time purchase
-              </span>
+    <>
+      {/* ── Full-Screen Lightbox ── */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-3xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-white text-sm truncate">{item.equipment_name}</span>
+                {hasBack && (
+                  <div className="flex items-center rounded-full bg-white/10 p-0.5 gap-0.5">
+                    <button
+                      onClick={() => setLightboxView('front')}
+                      className={`rounded-full px-3 py-1 text-xs font-bold transition ${lightboxView === 'front' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+                    >Front</button>
+                    <button
+                      onClick={() => setLightboxView('back')}
+                      className={`rounded-full px-3 py-1 text-xs font-bold transition ${lightboxView === 'back' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+                    >Back</button>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setLightboxOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+              >
+                <X size={18} />
+              </button>
             </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {item.rate_per_day != null && (
-                <span className="inline-flex items-center gap-0.5 rounded-lg bg-teal-50 border border-teal-100 px-2 py-0.5 text-xs font-bold text-teal-700">
-                  <IndianRupee size={11} />{item.rate_per_day}<span className="text-[10px] font-medium text-teal-600">/day</span>
-                </span>
-              )}
-              {item.rate_per_month != null && (
-                <span className="inline-flex items-center gap-0.5 rounded-lg bg-sky-50 border border-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700">
-                  <IndianRupee size={11} />{item.rate_per_month}<span className="text-[10px] font-medium text-sky-600">/mo</span>
-                </span>
-              )}
-              {item.rate_per_semester != null && (
-                <span className="inline-flex items-center gap-0.5 rounded-lg bg-indigo-50 border border-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">
-                  <IndianRupee size={11} />{item.rate_per_semester}<span className="text-[10px] font-medium text-indigo-600">/sem</span>
-                </span>
-              )}
-              {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
-                <div className="flex items-center gap-1 text-xs font-semibold text-amber-600">
-                  <IndianRupee size={12} />
-                  <span className="truncate">{item.price_note}</span>
+            {/* Image */}
+            <div className="flex items-center justify-center rounded-2xl overflow-hidden bg-black/40 max-h-[80vh]">
+              {lightboxImg ? (
+                <img
+                  src={lightboxImg}
+                  alt={`${item.equipment_name} ${lightboxView} view`}
+                  className="max-h-[80vh] w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-64 items-center justify-center text-white/30">
+                  <Image size={48} />
                 </div>
               )}
             </div>
-          )}
+            <p className="mt-2 text-center text-xs text-white/40">Click outside or press Esc to close</p>
+          </div>
         </div>
+      )}
 
-        <p className="mt-3 flex-1 text-xs sm:text-sm text-slate-500">
-          Listed by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}
-        </p>
-
-        <div className="mt-4">
-          {isOwn ? (
-            <div className="w-full rounded-xl bg-slate-50 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-400">Your listing</div>
-          ) : requestStatus === 'pending' ? (
-            <div className="flex gap-2">
-              <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-2.5 text-xs sm:text-sm font-bold text-amber-600">Request sent</div>
-              <button
-                onClick={() => onCancelRequest(item)}
-                className="flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
-                title="Cancel request"
-              >
-                <XCircle size={15} /> Cancel
-              </button>
+      <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/60 overflow-hidden">
+        {/* Item image or category icon */}
+        <div className="relative">
+          {item.image_url ? (
+            <div
+              className="h-44 sm:h-48 w-full bg-slate-100 flex items-center justify-center cursor-zoom-in"
+              onClick={() => { setLightboxView(activeView); setLightboxOpen(true); }}
+            >
+              <img
+                src={activeImg ?? item.image_url}
+                alt={`${item.equipment_name} ${activeView} view`}
+                className="max-h-full w-full object-contain p-2 transition duration-300 group-hover:scale-[1.03]"
+              />
+              {/* Zoom hint */}
+              <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-lg bg-black/40 px-2 py-1 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                <ZoomIn size={11} /> Inspect
+              </div>
             </div>
           ) : (
-            <button
-              disabled={item.status !== 'available' || requestStatus === 'approved'}
-              onClick={() => onRequest(item)}
-              className={`min-h-[44px] w-full rounded-xl py-2.5 px-4 text-xs sm:text-sm font-extrabold text-white transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${
-                isSell ? 'bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-600/15' : 'bg-slate-900 hover:bg-sky-600'
-              }`}
-            >
-              {item.status !== 'available'
-                ? (isSell ? 'Sold out' : 'Currently borrowed')
-                : requestStatus === 'approved'
-                ? (isSell ? 'Purchased ✓' : 'Approved ✓')
-                : (isSell ? 'Buy this item' : 'Request to borrow')}
-            </button>
+            <div className="flex h-44 sm:h-48 w-full items-center justify-center bg-slate-50">
+              {item.category === 'electronics' ? <Laptop size={36} className="text-sky-300" /> : item.category === 'academics' ? <BookOpen size={36} className="text-sky-300" /> : item.category === 'sports' ? <Compass size={36} className="text-sky-300" /> : <Sparkles size={36} className="text-sky-300" />}
+            </div>
+          )}
+
+          {/* Listing Type Tag */}
+          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+            {isSell ? (
+              <span className="flex items-center gap-1 rounded-full bg-violet-600/95 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+                <Tag size={11} /> For Sale
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 rounded-full bg-teal-600/95 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+                <Clock size={11} /> For Rent
+              </span>
+            )}
+          </div>
+
+          {/* Quantity Badge */}
+          {typeof item.quantity === 'number' && item.quantity > 0 && (
+            <div className="absolute top-3 right-3">
+              <span className="rounded-full bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm border border-slate-200/50">
+                {item.quantity} in stock
+              </span>
+            </div>
+          )}
+
+          {/* Front / Back switcher — only if back photo exists */}
+          {hasBack && item.image_url && (
+            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center rounded-full bg-black/50 backdrop-blur-sm p-0.5 gap-0.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); setActiveView('front'); }}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${activeView === 'front' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+              >Front</button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setActiveView('back'); }}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${activeView === 'back' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+              >Back</button>
+            </div>
           )}
         </div>
-      </div>
-    </article>
+
+        <div className="flex flex-1 flex-col p-4 sm:p-5">
+          <div className="mb-2 flex items-start justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-sky-600">{categoryLabels[item.category]}</p>
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
+          </div>
+
+          <h3 className="text-base font-extrabold text-slate-900 line-clamp-1">{item.equipment_name}</h3>
+
+          {/* Pricing display */}
+          <div className="mt-2.5">
+            {isSell ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg font-black text-slate-900 flex items-center">
+                  <IndianRupee size={16} />{item.sale_price != null ? item.sale_price : (item.price_note || 'Negotiable')}
+                </span>
+                <span className="text-[11px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                  One-time purchase
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {item.rate_per_day != null && (
+                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-teal-50 border border-teal-100 px-2 py-0.5 text-xs font-bold text-teal-700">
+                    <IndianRupee size={11} />{item.rate_per_day}<span className="text-[10px] font-medium text-teal-600">/day</span>
+                  </span>
+                )}
+                {item.rate_per_month != null && (
+                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-sky-50 border border-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700">
+                    <IndianRupee size={11} />{item.rate_per_month}<span className="text-[10px] font-medium text-sky-600">/mo</span>
+                  </span>
+                )}
+                {item.rate_per_semester != null && (
+                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-indigo-50 border border-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">
+                    <IndianRupee size={11} />{item.rate_per_semester}<span className="text-[10px] font-medium text-indigo-600">/sem</span>
+                  </span>
+                )}
+                {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
+                  <div className="flex items-center gap-1 text-xs font-semibold text-amber-600">
+                    <IndianRupee size={12} />
+                    <span className="truncate">{item.price_note}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <p className="mt-3 flex-1 text-xs sm:text-sm text-slate-500">
+            Listed by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}
+          </p>
+
+          <div className="mt-4">
+            {isOwn ? (
+              <div className="w-full rounded-xl bg-slate-50 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-400">Your listing</div>
+            ) : requestStatus === 'pending' ? (
+              <div className="flex gap-2">
+                <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-2.5 text-xs sm:text-sm font-bold text-amber-600">Request sent</div>
+                <button
+                  onClick={() => onCancelRequest(item)}
+                  className="flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
+                  title="Cancel request"
+                >
+                  <XCircle size={15} /> Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                disabled={item.status !== 'available' || requestStatus === 'approved'}
+                onClick={() => onRequest(item)}
+                className={`min-h-[44px] w-full rounded-xl py-2.5 px-4 text-xs sm:text-sm font-extrabold text-white transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${
+                  isSell ? 'bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-600/15' : 'bg-slate-900 hover:bg-sky-600'
+                }`}
+              >
+                {item.status !== 'available'
+                  ? (isSell ? 'Sold out' : 'Currently borrowed')
+                  : requestStatus === 'approved'
+                  ? (isSell ? 'Purchased ✓' : 'Approved ✓')
+                  : (isSell ? 'Buy this item' : 'Request to borrow')}
+              </button>
+            )}
+          </div>
+        </div>
+      </article>
+    </>
   );
 }
 
 // ── Image Upload Component ──────────────────────────────────
 
-function ImageUploader({
+// Shared single-slot uploader used inside DualImageUploader
+function SingleSlotUploader({
+  label,
+  sublabel,
   onUploaded,
   userId,
+  accentColor = 'sky',
 }: {
+  label: string;
+  sublabel: string;
   onUploaded: (url: string) => void;
   userId: string;
+  accentColor?: 'sky' | 'amber';
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -1028,13 +1133,18 @@ function ImageUploader({
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
 
+  const accentBorder = accentColor === 'amber' ? 'border-amber-400 bg-amber-50' : 'border-sky-400 bg-sky-50';
+  const accentHover = accentColor === 'amber' ? 'hover:border-amber-300 hover:bg-amber-50/50' : 'hover:border-sky-300 hover:bg-sky-50/50';
+  const accentIcon = accentColor === 'amber' ? 'text-amber-500' : 'text-sky-500';
+  const accentSpinner = accentColor === 'amber' ? 'text-amber-500' : 'text-sky-500';
+
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file (JPEG, PNG, WebP, etc.)');
+      setError('Please select a valid image file (JPEG, PNG, WebP).');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be smaller than 5 MB');
+      setError('Image must be smaller than 5 MB.');
       return;
     }
     setError('');
@@ -1064,17 +1174,18 @@ function ImageUploader({
   };
 
   return (
-    <div>
-      <label className="mb-2 block text-sm font-bold text-slate-700">
-        Item photo <span className="text-rose-500">*</span>
-      </label>
+    <div className="flex-1 min-w-0">
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <span className="text-xs font-extrabold text-slate-700">{label} <span className="text-rose-500">*</span></span>
+        <span className="text-[11px] text-slate-400">{sublabel}</span>
+      </div>
       {preview ? (
         <div className="relative overflow-hidden rounded-2xl border border-slate-200">
-          <img src={preview} alt="Preview" className="h-52 w-full object-cover" />
+          <img src={preview} alt={label} className="h-40 w-full object-contain bg-slate-50 p-1" />
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-              <LoaderCircle size={28} className="animate-spin text-sky-500" />
-              <span className="ml-2 text-sm font-semibold text-sky-600">Uploading…</span>
+              <LoaderCircle size={24} className={`animate-spin ${accentSpinner}`} />
+              <span className="ml-2 text-xs font-semibold text-slate-600">Uploading…</span>
             </div>
           )}
           {!uploading && (
@@ -1083,7 +1194,7 @@ function ImageUploader({
               onClick={() => { setPreview(null); onUploaded(''); if (inputRef.current) inputRef.current.value = ''; }}
               className="absolute right-2 top-2 flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-xs font-bold text-slate-600 shadow hover:bg-white"
             >
-              <X size={13} /> Change
+              <X size={12} /> Change
             </button>
           )}
         </div>
@@ -1093,24 +1204,277 @@ function ImageUploader({
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           onClick={() => inputRef.current?.click()}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-10 transition ${dragOver ? 'border-sky-400 bg-sky-50' : 'border-slate-200 bg-slate-50 hover:border-sky-300 hover:bg-sky-50/50'}`}
+          className={`flex h-40 cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed transition ${dragOver ? accentBorder : `border-slate-200 bg-slate-50 ${accentHover}`}`}
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm text-sky-500">
-            <Upload size={22} />
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ${accentIcon}`}>
+            <Upload size={20} />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-bold text-slate-700">Drop your photo here, or <span className="text-sky-600">browse</span></p>
-            <p className="mt-1 text-xs text-slate-400">JPEG, PNG, WebP · max 5 MB</p>
+          <div className="text-center px-2">
+            <p className="text-xs font-bold text-slate-700">Drop here or <span className={accentColor === 'amber' ? 'text-amber-600' : 'text-sky-600'}>browse</span></p>
+            <p className="mt-0.5 text-[10px] text-slate-400">JPEG, PNG, WebP · max 5 MB</p>
           </div>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onInputChange} />
-      {error && <p className="mt-2 text-xs font-semibold text-rose-500">{error}</p>}
+      {error && <p className="mt-1.5 text-[11px] font-semibold text-rose-500">{error}</p>}
     </div>
   );
 }
 
-// ── Add Item ───────────────────────────────────────────────
+// ── Dual Image Uploader (Front + Back) with authenticity warning ──
+function DualImageUploader({
+  onFrontUploaded,
+  onBackUploaded,
+  userId,
+}: {
+  onFrontUploaded: (url: string) => void;
+  onBackUploaded: (url: string) => void;
+  userId: string;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* ⚠️ Legitimacy Warning Banner */}
+      <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <div className="shrink-0 mt-0.5">
+          <AlertTriangle size={18} className="text-amber-600" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-extrabold text-amber-800 mb-1">Upload genuine photos of your actual item</p>
+          <ul className="space-y-0.5 text-[11px] text-amber-700 leading-relaxed">
+            <li>• Take real photos yourself — do <strong>not</strong> use stock images or brand catalogue photos.</li>
+            <li>• Both <strong>front</strong> and <strong>back</strong> views are required so borrowers can inspect wear, ports, labels, or any damage.</li>
+            <li>• Listings with misleading or downloaded images will be removed.</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Two side-by-side upload slots — responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <SingleSlotUploader
+          label="📷 Front View"
+          sublabel="Main face of item"
+          onUploaded={onFrontUploaded}
+          userId={userId}
+          accentColor="sky"
+        />
+        <SingleSlotUploader
+          label="🔄 Back View"
+          sublabel="Reverse / tags / ports"
+          onUploaded={onBackUploaded}
+          userId={userId}
+          accentColor="amber"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── Single Listing Card in "Your Listings" with Front/Back & Lightbox ──
+function MyListingCard({
+  item,
+  onDelete,
+}: {
+  item: EquipmentWithOwner;
+  onDelete: (id: string) => void;
+}) {
+  const isSell = item.listing_type === 'sell';
+  const hasBack = Boolean(item.image_back_url);
+  const [activeView, setActiveView] = useState<'front' | 'back'>('front');
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const activeImg = activeView === 'front' ? item.image_url : (item.image_back_url || item.image_url);
+
+  // Close lightbox on Escape
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [lightboxOpen]);
+
+  return (
+    <>
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-3xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-white text-sm truncate">{item.equipment_name}</span>
+                {hasBack && (
+                  <div className="flex items-center rounded-full bg-white/10 p-0.5 gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setActiveView('front')}
+                      className={`rounded-full px-3 py-1 text-xs font-bold transition ${activeView === 'front' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+                    >Front</button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveView('back')}
+                      className={`rounded-full px-3 py-1 text-xs font-bold transition ${activeView === 'back' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+                    >Back</button>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex items-center justify-center rounded-2xl overflow-hidden bg-black/40 max-h-[80vh]">
+              {activeImg ? (
+                <img
+                  src={activeImg}
+                  alt={`${item.equipment_name} ${activeView} view`}
+                  className="max-h-[80vh] w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-64 items-center justify-center text-white/30">
+                  <Image size={48} />
+                </div>
+              )}
+            </div>
+            <p className="mt-2 text-center text-xs text-white/40">Click outside or press Esc to close</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md hover:border-slate-300">
+        <div
+          className="relative h-44 bg-slate-100 flex items-center justify-center overflow-hidden cursor-zoom-in"
+          onClick={() => setLightboxOpen(true)}
+        >
+          {item.image_url ? (
+            <img
+              src={activeImg || item.image_url}
+              alt={`${item.equipment_name} ${activeView} view`}
+              className="max-h-full w-full object-contain p-2 transition hover:scale-[1.02]"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-slate-50 text-slate-300">
+              <Image size={28} />
+            </div>
+          )}
+
+          {/* Zoom hint */}
+          {item.image_url && (
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-lg bg-black/40 px-2 py-1 text-[10px] font-bold text-white opacity-0 hover:opacity-100 transition pointer-events-none">
+              <ZoomIn size={11} /> Inspect
+            </div>
+          )}
+
+          {/* Tag for sell vs rent */}
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1">
+            {isSell ? (
+              <span className="flex items-center gap-1 rounded-full bg-violet-600 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
+                <Tag size={10} /> For Sale
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 rounded-full bg-teal-600 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
+                <Clock size={10} /> For Rent
+              </span>
+            )}
+          </div>
+
+          <div className="absolute top-2.5 right-2.5">
+            <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-extrabold text-slate-700 shadow-sm border border-slate-200">
+              {item.quantity || 1} in stock
+            </span>
+          </div>
+
+          {/* Front / Back switcher */}
+          {hasBack && item.image_url && (
+            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center rounded-full bg-black/50 backdrop-blur-sm p-0.5 gap-0.5">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setActiveView('front'); }}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${activeView === 'front' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+              >Front</button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setActiveView('back'); }}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${activeView === 'back' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+              >Back</button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-1 flex-col p-4 justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold text-sky-600 uppercase tracking-wide">
+                {categoryLabels[item.category]}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
+                  item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                }`}
+              >
+                {item.status}
+              </span>
+            </div>
+            <h3 className="font-extrabold text-slate-900 text-sm sm:text-base line-clamp-1">
+              {item.equipment_name}
+            </h3>
+
+            {/* Pricing summary */}
+            <div className="mt-2">
+              {isSell ? (
+                <div className="flex items-center gap-1 text-slate-900 font-extrabold text-sm">
+                  <IndianRupee size={13} />
+                  {item.sale_price != null ? item.sale_price : (item.price_note || 'Negotiable')}
+                  <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-full ml-1">
+                    Sale
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1 text-[11px]">
+                  {item.rate_per_day != null && (
+                    <span className="rounded bg-teal-50 border border-teal-100 px-1.5 py-0.5 text-teal-700 font-bold">
+                      ₹{item.rate_per_day}/day
+                    </span>
+                  )}
+                  {item.rate_per_month != null && (
+                    <span className="rounded bg-sky-50 border border-sky-100 px-1.5 py-0.5 text-sky-700 font-bold">
+                      ₹{item.rate_per_month}/mo
+                    </span>
+                  )}
+                  {item.rate_per_semester != null && (
+                    <span className="rounded bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 text-indigo-700 font-bold">
+                      ₹{item.rate_per_semester}/sem
+                    </span>
+                  )}
+                  {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
+                    <span className="text-amber-600 font-semibold truncate flex items-center">
+                      <IndianRupee size={11} /> {item.price_note}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
+            <button
+              onClick={() => onDelete(item.equipment_id)}
+              className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-rose-600 py-1 px-2 rounded-lg hover:bg-rose-50 transition"
+              title="Remove listing"
+            >
+              <Trash2 size={14} /> Remove Listing
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
 // ── Add Item ───────────────────────────────────────────────
 
@@ -1134,6 +1498,8 @@ function AddItem({
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('academics');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageBackUrl, setImageBackUrl] = useState('');
+  const [previewView, setPreviewView] = useState<'front' | 'back'>('front');
   const [listingType, setListingType] = useState<ListingType>('rent');
   const [salePrice, setSalePrice] = useState('');
   const [rateDay, setRateDay] = useState('');
@@ -1168,6 +1534,7 @@ function AddItem({
         name: pName,
         category: pCat,
         imageUrl: pUrl,
+        imageBackUrl: pBackUrl,
         priceNote: pPrice,
         quantity: pQty,
         listingType: pType,
@@ -1177,7 +1544,7 @@ function AddItem({
         rateSemester: pSem,
       } = pendingAction.formData;
       clearPendingAction();
-      doSubmit(pName, pCat, pUrl, pPrice, pQty, pType, pSale, pDay, pMonth, pSem);
+      doSubmit(pName, pCat, pUrl, pBackUrl, pPrice, pQty, pType, pSale, pDay, pMonth, pSem);
     }
   }, [ownerProfile.room_number, pendingAction]);
 
@@ -1185,6 +1552,7 @@ function AddItem({
     itemName: string,
     itemCat: Category,
     itemImageUrl: string,
+    itemImageBackUrl: string,
     itemPriceNote: string,
     itemQty: number,
     itemType: ListingType,
@@ -1205,6 +1573,7 @@ function AddItem({
         equipment_name: itemName,
         category: itemCat,
         image_url: itemImageUrl,
+        image_back_url: itemImageBackUrl,
         price_note: itemPriceNote || null,
         quantity: itemQty,
         listing_type: itemType,
@@ -1226,6 +1595,8 @@ function AddItem({
       setRateMonth('');
       setRateSemester('');
       setImageUrl('');
+      setImageBackUrl('');
+      setPreviewView('front');
     } catch (err: any) {
       setError(err?.message || 'Failed to list item. Please ensure you are logged in.');
     } finally {
@@ -1240,7 +1611,11 @@ function AddItem({
       return;
     }
     if (!imageUrl) {
-      setError('Please upload a photo of your item before listing.');
+      setError('Please upload the front photo of your item before listing.');
+      return;
+    }
+    if (!imageBackUrl) {
+      setError('Please upload the back photo of your item before listing.');
       return;
     }
 
@@ -1265,6 +1640,7 @@ function AddItem({
       name: name.trim(),
       category,
       imageUrl,
+      imageBackUrl,
       priceNote,
       quantity,
       listingType,
@@ -1275,7 +1651,7 @@ function AddItem({
     };
 
     if (!requireProfile({ type: 'list', formData: payloadData })) return;
-    await doSubmit(name.trim(), category, imageUrl, priceNote, quantity, listingType, salePrice, rateDay, rateMonth, rateSemester);
+    await doSubmit(name.trim(), category, imageUrl, imageBackUrl, priceNote, quantity, listingType, salePrice, rateDay, rateMonth, rateSemester);
   };
 
   const handleDelete = async (equipmentId: string) => {
@@ -1287,6 +1663,8 @@ function AddItem({
       showToast(err?.message || 'Could not delete item. Please try again.');
     }
   };
+
+  const activePreviewImg = previewView === 'front' ? imageUrl : (imageBackUrl || imageUrl);
 
   return (
     <div className="mx-auto max-w-6xl px-2 sm:px-4 lg:px-6">
@@ -1424,19 +1802,24 @@ function AddItem({
             </div>
           </div>
 
-          {/* Card: Item Photo Upload */}
+          {/* Card: Item Photos (Front + Back) */}
           <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm">
             <div className="mb-4 flex items-center gap-2.5 border-b border-slate-100 pb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
                 <Image size={16} />
               </div>
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">2. Item Photo</h2>
-                <p className="text-xs text-slate-400">Show peers the real condition of your item</p>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">2. Item Photos</h2>
+                <p className="text-xs text-slate-400">Front & back required — help peers inspect condition</p>
               </div>
             </div>
-            <ImageUploader onUploaded={setImageUrl} userId={ownerId} />
+            <DualImageUploader
+              onFrontUploaded={setImageUrl}
+              onBackUploaded={setImageBackUrl}
+              userId={ownerId}
+            />
           </div>
+
         </div>
 
         {/* ── RIGHT COLUMN: Listing Type, Pricing & Live Preview ───── */}
@@ -1633,14 +2016,39 @@ function AddItem({
 
             {/* Mock Item Card Preview */}
             <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
-              <div className="relative h-36 bg-slate-100 overflow-hidden">
-                {imageUrl ? (
-                  <img src={imageUrl} alt="Preview" className="h-full w-full object-cover" />
+              <div className="relative h-44 bg-slate-100 flex items-center justify-center overflow-hidden">
+                {activePreviewImg ? (
+                  <img
+                    src={activePreviewImg}
+                    alt="Preview"
+                    className="max-h-full w-full object-contain p-2"
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-slate-300">
                     {category === 'electronics' ? <Laptop size={32} /> : category === 'academics' ? <BookOpen size={32} /> : category === 'sports' ? <Compass size={32} /> : <Sparkles size={32} />}
                   </div>
                 )}
+
+                {/* Front / Back switcher for live preview if both are present */}
+                {imageUrl && imageBackUrl && (
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center rounded-full bg-black/50 backdrop-blur-sm p-0.5 gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewView('front')}
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold transition ${previewView === 'front' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+                    >
+                      Front
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewView('back')}
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold transition ${previewView === 'back' ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'}`}
+                    >
+                      Back
+                    </button>
+                  </div>
+                )}
+
                 <div className="absolute top-2.5 left-2.5">
                   {listingType === 'sell' ? (
                     <span className="flex items-center gap-1 rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
@@ -1727,109 +2135,9 @@ function AddItem({
           <Empty icon={<PackagePlus size={24} />} title="No listings yet" text="Items you add above will appear here." />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {myItems.map((item) => {
-              const isSell = item.listing_type === 'sell';
-              return (
-                <div
-                  key={item.equipment_id}
-                  className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md hover:border-slate-300"
-                >
-                  <div className="relative h-44 bg-slate-100 overflow-hidden">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-50 text-slate-300">
-                        <Image size={28} />
-                      </div>
-                    )}
-                    {/* Tag for sell vs rent */}
-                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1">
-                      {isSell ? (
-                        <span className="flex items-center gap-1 rounded-full bg-violet-600 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
-                          <Tag size={10} /> For Sale
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 rounded-full bg-teal-600 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
-                          <Clock size={10} /> For Rent
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="absolute top-2.5 right-2.5">
-                      <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-extrabold text-slate-700 shadow-sm border border-slate-200">
-                        {item.quantity || 1} in stock
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-1 flex-col p-4 justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-bold text-sky-600 uppercase tracking-wide">
-                          {categoryLabels[item.category]}
-                        </span>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
-                            item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </div>
-                      <h3 className="font-extrabold text-slate-900 text-sm sm:text-base line-clamp-1">
-                        {item.equipment_name}
-                      </h3>
-
-                      {/* Pricing summary */}
-                      <div className="mt-2">
-                        {isSell ? (
-                          <div className="flex items-center gap-1 text-slate-900 font-extrabold text-sm">
-                            <IndianRupee size={13} />
-                            {item.sale_price != null ? item.sale_price : (item.price_note || 'Negotiable')}
-                            <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-full ml-1">
-                              Sale
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-1 text-[11px]">
-                            {item.rate_per_day != null && (
-                              <span className="rounded bg-teal-50 border border-teal-100 px-1.5 py-0.5 text-teal-700 font-bold">
-                                ₹{item.rate_per_day}/day
-                              </span>
-                            )}
-                            {item.rate_per_month != null && (
-                              <span className="rounded bg-sky-50 border border-sky-100 px-1.5 py-0.5 text-sky-700 font-bold">
-                                ₹{item.rate_per_month}/mo
-                              </span>
-                            )}
-                            {item.rate_per_semester != null && (
-                              <span className="rounded bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 text-indigo-700 font-bold">
-                                ₹{item.rate_per_semester}/sem
-                              </span>
-                            )}
-                            {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
-                              <span className="text-amber-600 font-semibold truncate flex items-center">
-                                <IndianRupee size={11} /> {item.price_note}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
-                      <button
-                        onClick={() => handleDelete(item.equipment_id)}
-                        className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-rose-600 py-1 px-2 rounded-lg hover:bg-rose-50 transition"
-                        title="Remove listing"
-                      >
-                        <Trash2 size={14} /> Remove Listing
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {myItems.map((item) => (
+              <MyListingCard key={item.equipment_id} item={item} onDelete={handleDelete} />
+            ))}
           </div>
         )}
       </div>

@@ -55,6 +55,7 @@ export const api = {
     equipment_name: string;
     category: Category;
     image_url: string;
+    image_back_url: string;
     price_note?: string | null;
     quantity?: number;
     listing_type?: 'sell' | 'rent';

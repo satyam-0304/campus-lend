@@ -29,6 +29,7 @@ export type EquipmentRow = {
   status: EquipmentStatus;
   owner_id: string;
   image_url: string | null;
+  image_back_url: string | null; // Back / reverse photo for condition inspection
   price_note: string | null;
   quantity: number; // Number of identical items available
   listing_type?: ListingType;

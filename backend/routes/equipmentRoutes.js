@@ -9,7 +9,7 @@ const VALID_CATEGORIES = ['academics', 'electronics', 'sports', 'event_wear'];
 
 // Reusable select string — joins owner profile via FK
 const EQUIPMENT_SELECT =
-  'equipment_id, equipment_name, category, status, owner_id, image_url, price_note, ' +
+  'equipment_id, equipment_name, category, status, owner_id, image_url, image_back_url, price_note, ' +
   'quantity, listing_type, sale_price, rate_per_day, rate_per_month, rate_per_semester, created_at, ' +
   'owner:profiles!owner_id(id, full_name, room_number, phone_number)';
 
@@ -41,13 +41,14 @@ router.get('/mine', authMiddleware, async (req, res) => {
 
 // ── POST / ────────────────────────────────────────────────────
 // Protected. Adds a new item. owner_id is always forced to req.user.id.
-// image_url accepts a plain text URL string (required).
+// image_url (front photo) is required; image_back_url (back photo) is required for new listings.
 // supports listing_type ('sell' | 'rent'), sale_price, rate_per_day, rate_per_month, rate_per_semester, quantity.
 router.post('/', authMiddleware, async (req, res) => {
   const {
     equipment_name,
     category,
     image_url,
+    image_back_url,
     price_note,
     quantity,
     listing_type,
@@ -66,7 +67,10 @@ router.post('/', authMiddleware, async (req, res) => {
     });
   }
   if (!image_url || typeof image_url !== 'string' || !image_url.trim()) {
-    return res.status(400).json({ error: 'image_url is required — please upload an image' });
+    return res.status(400).json({ error: 'Front photo is required — please upload an image of the item.' });
+  }
+  if (!image_back_url || typeof image_back_url !== 'string' || !image_back_url.trim()) {
+    return res.status(400).json({ error: 'Back photo is required — please upload a back/reverse view of the item.' });
   }
 
   const normalizedListingType = listing_type === 'sell' ? 'sell' : 'rent';
@@ -106,6 +110,7 @@ router.post('/', authMiddleware, async (req, res) => {
       status: 'available',
       owner_id: req.user.id, // always the authenticated user — body value ignored
       image_url: image_url.trim(),
+      image_back_url: image_back_url.trim(),
       price_note: effectivePriceNote || null,
       quantity: parsedQty,
       listing_type: normalizedListingType,
