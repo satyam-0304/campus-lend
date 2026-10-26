@@ -57,6 +57,11 @@ export const api = {
     image_url: string;
     price_note?: string | null;
     quantity?: number;
+    listing_type?: 'sell' | 'rent';
+    sale_price?: number | null;
+    rate_per_day?: number | null;
+    rate_per_month?: number | null;
+    rate_per_semester?: number | null;
   }): Promise<EquipmentWithOwner> {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_BASE_URL}/api/equipment`, {

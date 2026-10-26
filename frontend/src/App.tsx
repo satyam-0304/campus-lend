@@ -3,23 +3,33 @@ import {
   Bell,
   BookOpen,
   Building2,
+  Calendar,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
+  Clock,
   Compass,
+  Eye,
   FileText,
   GraduationCap,
   Image,
   IndianRupee,
+  Info,
   Laptop,
+  Layers,
   LoaderCircle,
   LogOut,
   MapPin,
   Menu,
+  Minus,
   PackagePlus,
+  Plus,
   Search,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
+  Tag,
   Trash2,
   Upload,
   UserRound,
@@ -33,6 +43,7 @@ import type {
   BorrowRequestWithDetails,
   Category,
   EquipmentWithOwner,
+  ListingType,
   Profile,
   RequestStatus,
 } from '@/lib/types';
@@ -45,7 +56,21 @@ type Page = 'explore' | 'add' | 'dashboard' | 'profile';
 // Pending action captured before profile modal
 type PendingAction =
   | { type: 'request'; item: EquipmentWithOwner }
-  | { type: 'list'; formData: { name: string; category: Category; imageUrl: string; priceNote: string } };
+  | {
+      type: 'list';
+      formData: {
+        name: string;
+        category: Category;
+        imageUrl: string;
+        priceNote: string;
+        quantity: number;
+        listingType: ListingType;
+        salePrice: string;
+        rateDay: string;
+        rateMonth: string;
+        rateSemester: string;
+      };
+    };
 
 const categoryLabels: Record<Category, string> = {
   academics: 'Academics',
@@ -864,42 +889,104 @@ function ItemCard({
   onCancelRequest: (item: EquipmentWithOwner) => void;
 }) {
   const requestStatus = requestEntry?.status;
+  const isSell = item.listing_type === 'sell';
+
   return (
     <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/60 overflow-hidden">
       {/* Item image or category icon */}
-      {item.image_url ? (
-        <div className="h-40 sm:h-44 w-full overflow-hidden bg-slate-100">
-          <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover transition group-hover:scale-105" />
-        </div>
-      ) : (
-        <div className="flex h-40 sm:h-44 w-full items-center justify-center bg-sky-50">
-          {item.category === 'electronics' ? <Laptop size={36} className="text-sky-300" /> : item.category === 'academics' ? <BookOpen size={36} className="text-sky-300" /> : item.category === 'sports' ? <Compass size={36} className="text-sky-300" /> : <Sparkles size={36} className="text-sky-300" />}
-        </div>
-      )}
-
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <div className="mb-2.5 sm:mb-3 flex items-start justify-between">
-          <p className="text-xs font-bold uppercase tracking-wider text-sky-600">{categoryLabels[item.category]}</p>
-          <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
-        </div>
-        <h3 className="text-sm sm:text-base font-extrabold text-slate-900 line-clamp-1">{item.equipment_name}</h3>
-        {item.price_note && (
-          <div className="mt-1 flex items-center gap-1 text-xs sm:text-sm font-semibold text-amber-600">
-            <IndianRupee size={13} />
-            <span className="truncate">{item.price_note}</span>
+      <div className="relative">
+        {item.image_url ? (
+          <div className="h-44 sm:h-48 w-full overflow-hidden bg-slate-100">
+            <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+          </div>
+        ) : (
+          <div className="flex h-44 sm:h-48 w-full items-center justify-center bg-slate-50">
+            {item.category === 'electronics' ? <Laptop size={36} className="text-sky-300" /> : item.category === 'academics' ? <BookOpen size={36} className="text-sky-300" /> : item.category === 'sports' ? <Compass size={36} className="text-sky-300" /> : <Sparkles size={36} className="text-sky-300" />}
           </div>
         )}
-        <p className="mt-2 flex-1 text-xs sm:text-sm text-slate-500">Owned by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}</p>
 
-        <div className="mt-4 sm:mt-5">
+        {/* Listing Type Tag on Image */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          {isSell ? (
+            <span className="flex items-center gap-1 rounded-full bg-violet-600/95 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+              <Tag size={11} /> For Sale
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 rounded-full bg-teal-600/95 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+              <Clock size={11} /> For Rent
+            </span>
+          )}
+        </div>
+
+        {/* Quantity Badge */}
+        {typeof item.quantity === 'number' && item.quantity > 0 && (
+          <div className="absolute top-3 right-3">
+            <span className="rounded-full bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm border border-slate-200/50">
+              {item.quantity} in stock
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <div className="mb-2 flex items-start justify-between">
+          <p className="text-xs font-bold uppercase tracking-wider text-sky-600">{categoryLabels[item.category]}</p>
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
+        </div>
+
+        <h3 className="text-base font-extrabold text-slate-900 line-clamp-1">{item.equipment_name}</h3>
+
+        {/* Pricing display */}
+        <div className="mt-2.5">
+          {isSell ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-black text-slate-900 flex items-center">
+                <IndianRupee size={16} />{item.sale_price != null ? item.sale_price : (item.price_note || 'Negotiable')}
+              </span>
+              <span className="text-[11px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                One-time purchase
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {item.rate_per_day != null && (
+                <span className="inline-flex items-center gap-0.5 rounded-lg bg-teal-50 border border-teal-100 px-2 py-0.5 text-xs font-bold text-teal-700">
+                  <IndianRupee size={11} />{item.rate_per_day}<span className="text-[10px] font-medium text-teal-600">/day</span>
+                </span>
+              )}
+              {item.rate_per_month != null && (
+                <span className="inline-flex items-center gap-0.5 rounded-lg bg-sky-50 border border-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700">
+                  <IndianRupee size={11} />{item.rate_per_month}<span className="text-[10px] font-medium text-sky-600">/mo</span>
+                </span>
+              )}
+              {item.rate_per_semester != null && (
+                <span className="inline-flex items-center gap-0.5 rounded-lg bg-indigo-50 border border-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">
+                  <IndianRupee size={11} />{item.rate_per_semester}<span className="text-[10px] font-medium text-indigo-600">/sem</span>
+                </span>
+              )}
+              {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
+                <div className="flex items-center gap-1 text-xs font-semibold text-amber-600">
+                  <IndianRupee size={12} />
+                  <span className="truncate">{item.price_note}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <p className="mt-3 flex-1 text-xs sm:text-sm text-slate-500">
+          Listed by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}
+        </p>
+
+        <div className="mt-4">
           {isOwn ? (
-            <div className="w-full rounded-xl bg-slate-50 py-3 text-center text-xs sm:text-sm font-bold text-slate-400">Your listing</div>
+            <div className="w-full rounded-xl bg-slate-50 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-400">Your listing</div>
           ) : requestStatus === 'pending' ? (
             <div className="flex gap-2">
-              <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-3 text-xs sm:text-sm font-bold text-amber-600">Request sent</div>
+              <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-2.5 text-xs sm:text-sm font-bold text-amber-600">Request sent</div>
               <button
                 onClick={() => onCancelRequest(item)}
-                className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2.5 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
+                className="flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
                 title="Cancel request"
               >
                 <XCircle size={15} /> Cancel
@@ -909,9 +996,15 @@ function ItemCard({
             <button
               disabled={item.status !== 'available' || requestStatus === 'approved'}
               onClick={() => onRequest(item)}
-              className="min-h-[44px] w-full rounded-xl bg-slate-900 py-3 text-xs sm:text-sm font-extrabold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              className={`min-h-[44px] w-full rounded-xl py-2.5 px-4 text-xs sm:text-sm font-extrabold text-white transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${
+                isSell ? 'bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-600/15' : 'bg-slate-900 hover:bg-sky-600'
+              }`}
             >
-              {item.status !== 'available' ? 'Currently borrowed' : requestStatus === 'approved' ? 'Approved ✓' : 'Request to borrow'}
+              {item.status !== 'available'
+                ? (isSell ? 'Sold out' : 'Currently borrowed')
+                : requestStatus === 'approved'
+                ? (isSell ? 'Purchased ✓' : 'Approved ✓')
+                : (isSell ? 'Buy this item' : 'Request to borrow')}
             </button>
           )}
         </div>
@@ -1019,6 +1112,8 @@ function ImageUploader({
 
 // ── Add Item ───────────────────────────────────────────────
 
+// ── Add Item ───────────────────────────────────────────────
+
 function AddItem({
   ownerId,
   ownerProfile,
@@ -1039,6 +1134,11 @@ function AddItem({
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('academics');
   const [imageUrl, setImageUrl] = useState('');
+  const [listingType, setListingType] = useState<ListingType>('rent');
+  const [salePrice, setSalePrice] = useState('');
+  const [rateDay, setRateDay] = useState('');
+  const [rateMonth, setRateMonth] = useState('');
+  const [rateSemester, setRateSemester] = useState('');
   const [priceNote, setPriceNote] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -1064,31 +1164,70 @@ function AddItem({
   // Re-attempt listing after profile was saved via modal
   useEffect(() => {
     if (pendingAction?.type === 'list' && ownerProfile.room_number) {
-      const { name: pName, category: pCat, imageUrl: pUrl, priceNote: pPrice } = pendingAction.formData;
+      const {
+        name: pName,
+        category: pCat,
+        imageUrl: pUrl,
+        priceNote: pPrice,
+        quantity: pQty,
+        listingType: pType,
+        salePrice: pSale,
+        rateDay: pDay,
+        rateMonth: pMonth,
+        rateSemester: pSem,
+      } = pendingAction.formData;
       clearPendingAction();
-      doSubmit(pName, pCat, pUrl, pPrice);
+      doSubmit(pName, pCat, pUrl, pPrice, pQty, pType, pSale, pDay, pMonth, pSem);
     }
   }, [ownerProfile.room_number, pendingAction]);
 
-  const doSubmit = async (itemName: string, itemCat: Category, itemImageUrl: string, itemPriceNote: string) => {
+  const doSubmit = async (
+    itemName: string,
+    itemCat: Category,
+    itemImageUrl: string,
+    itemPriceNote: string,
+    itemQty: number,
+    itemType: ListingType,
+    itemSalePrice: string,
+    itemRateDay: string,
+    itemRateMonth: string,
+    itemRateSemester: string,
+  ) => {
     setError('');
     setLoading(true);
     try {
+      const parsedSale = itemType === 'sell' && itemSalePrice.trim() ? parseFloat(itemSalePrice) : null;
+      const parsedDay = itemType === 'rent' && itemRateDay.trim() ? parseFloat(itemRateDay) : null;
+      const parsedMonth = itemType === 'rent' && itemRateMonth.trim() ? parseFloat(itemRateMonth) : null;
+      const parsedSemester = itemType === 'rent' && itemRateSemester.trim() ? parseFloat(itemRateSemester) : null;
+
       const newItem = await api.createEquipment({
         equipment_name: itemName,
         category: itemCat,
         image_url: itemImageUrl,
         price_note: itemPriceNote || null,
-        quantity,
+        quantity: itemQty,
+        listing_type: itemType,
+        sale_price: parsedSale,
+        rate_per_day: parsedDay,
+        rate_per_month: parsedMonth,
+        rate_per_semester: parsedSemester,
       });
+
       setMyItems((prev) => [newItem, ...prev]);
-      showToast('Item added to the campus library 🎉');
+      showToast(itemType === 'sell' ? 'Item listed for sale 🎉' : 'Item added to campus library 🎉');
+
       // Reset form
       setName('');
       setQuantity(1);
       setPriceNote('');
+      setSalePrice('');
+      setRateDay('');
+      setRateMonth('');
+      setRateSemester('');
+      setImageUrl('');
     } catch (err: any) {
-      setError(err?.message || 'Failed to add item. Please ensure you are logged in.');
+      setError(err?.message || 'Failed to list item. Please ensure you are logged in.');
     } finally {
       setLoading(false);
     }
@@ -1096,9 +1235,47 @@ function AddItem({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!imageUrl) { setError('Please upload a photo of your item before listing.'); return; }
-    if (!requireProfile({ type: 'list', formData: { name, category, imageUrl, priceNote } })) return;
-    await doSubmit(name, category, imageUrl, priceNote);
+    if (!name.trim()) {
+      setError('Please provide what you are listing.');
+      return;
+    }
+    if (!imageUrl) {
+      setError('Please upload a photo of your item before listing.');
+      return;
+    }
+
+    if (listingType === 'sell') {
+      const p = parseFloat(salePrice);
+      if (!salePrice.trim() || isNaN(p) || p <= 0) {
+        setError('Please enter a valid selling price in ₹.');
+        return;
+      }
+    } else {
+      const d = parseFloat(rateDay);
+      const m = parseFloat(rateMonth);
+      const s = parseFloat(rateSemester);
+      const hasRate = (!isNaN(d) && d >= 0) || (!isNaN(m) && m >= 0) || (!isNaN(s) && s >= 0);
+      if (!hasRate && !priceNote.trim()) {
+        setError('Please provide at least one rental rate (per day, month, or semester) or specify your terms.');
+        return;
+      }
+    }
+
+    const payloadData = {
+      name: name.trim(),
+      category,
+      imageUrl,
+      priceNote,
+      quantity,
+      listingType,
+      salePrice,
+      rateDay,
+      rateMonth,
+      rateSemester,
+    };
+
+    if (!requireProfile({ type: 'list', formData: payloadData })) return;
+    await doSubmit(name.trim(), category, imageUrl, priceNote, quantity, listingType, salePrice, rateDay, rateMonth, rateSemester);
   };
 
   const handleDelete = async (equipmentId: string) => {
@@ -1112,71 +1289,436 @@ function AddItem({
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <button onClick={onDone} className="mb-6 sm:mb-8 flex min-h-[36px] items-center gap-2 text-xs sm:text-sm font-bold text-slate-500 hover:text-sky-600"><ChevronLeft size={17} />Back to explore</button>
-      <div className="mb-6 sm:mb-8">
-        <div className="mb-3 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600"><PackagePlus size={22} /></div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Share an item</h1>
-        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500">Give something useful a second life on campus.</p>
-      </div>
-      <form onSubmit={submit} className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
-        <div className="space-y-5 sm:space-y-6">
-          <Field label="What are you sharing?" placeholder="e.g. Scientific calculator" value={name} onChange={(e) => setName(e.target.value)} required />
+    <div className="mx-auto max-w-6xl px-2 sm:px-4 lg:px-6">
+      {/* Top Navigation & Hero Banner */}
+      <button
+        onClick={onDone}
+        className="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-sky-600 hover:bg-slate-50"
+      >
+        <ChevronLeft size={16} /> Back to explore
+      </button>
+
+      <div className="mb-8 rounded-3xl bg-gradient-to-br from-sky-50 via-white to-indigo-50/40 p-6 sm:p-8 border border-sky-100/70 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10">
-              <option value="academics">Academics</option>
-              <option value="electronics">Electronics</option>
-              <option value="sports">Sports</option>
-              <option value="event_wear">Event wear</option>
-            </select>
+            <div className="inline-flex items-center gap-2 rounded-full bg-sky-100/80 px-3 py-1 text-xs font-extrabold text-sky-800 mb-2.5">
+              <Sparkles size={13} className="text-sky-600" />
+              Campus Sharing & Marketplace
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900">
+              Share or Sell an Item
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-xl">
+              Turn unused equipment into campus goodwill or extra pocket money. Choose whether you are selling permanently or lending for a period.
+            </p>
           </div>
-          {/* Image upload — required */}
-          <ImageUploader onUploaded={setImageUrl} userId={ownerId} />
-          {/* Price note — optional */}
-          <div>
-            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">
-              Price / Terms <span className="text-xs font-normal text-slate-400">(optional)</span>
-            </label>
-            <div className="relative">
-              <IndianRupee size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="e.g. ₹50/day, free for 2 days, negotiable"
-                value={priceNote}
-                onChange={(e) => setPriceNote(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
-              />
+          <div className="hidden sm:flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
+            <PackagePlus size={30} />
+          </div>
+        </div>
+      </div>
+
+      {/* Main 2-Column Wide Form */}
+      <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* ── LEFT COLUMN: Basic Item Info & Photo ─────────────────── */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Card: Item Details */}
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm">
+            <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+                <BookOpen size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">1. Item Information</h2>
+                <p className="text-xs text-slate-400">Describe the gear you are offering</p>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <div>
+                <label className="mb-2 block text-xs sm:text-sm font-bold text-slate-700">
+                  What are you listing? <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Mini Drafter, Casio FX-991EX, Lab Coat, Football..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                  required
+                />
+              </div>
+
+              {/* Category Selector Buttons */}
+              <div>
+                <label className="mb-2 block text-xs sm:text-sm font-bold text-slate-700">
+                  Category <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {(
+                    [
+                      { id: 'academics', label: 'Academics', icon: BookOpen },
+                      { id: 'electronics', label: 'Electronics', icon: Laptop },
+                      { id: 'sports', label: 'Sports', icon: Compass },
+                      { id: 'event_wear', label: 'Event Wear', icon: Sparkles },
+                    ] as const
+                  ).map((cat) => {
+                    const Icon = cat.icon;
+                    const isSelected = category === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setCategory(cat.id)}
+                        className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3 border text-center transition ${
+                          isSelected
+                            ? 'border-sky-500 bg-sky-50/80 text-sky-700 shadow-sm ring-2 ring-sky-500/20'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Icon size={18} className={isSelected ? 'text-sky-600' : 'text-slate-400'} />
+                        <span className="text-xs font-bold">{cat.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quantity Stepper */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-slate-700">
+                    Quantity Available
+                  </label>
+                  <span className="text-xs text-slate-400">Total units on hand</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+                    >
+                      <Minus size={15} />
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-14 bg-transparent text-center text-sm font-extrabold text-slate-900 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((prev) => prev + 1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+                    >
+                      <Plus size={15} />
+                    </button>
+                  </div>
+                  <span className="text-xs font-medium text-slate-500">
+                    {quantity === 1 ? '1 student can borrow or buy' : `${quantity} students can borrow or buy`}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-{/* Quantity Available */}
-<div>
-  <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Quantity Available</label>
-  <input
-    type="number"
-    min={1}
-    value={quantity}
-    onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-    className="w-full rounded-xl border border-slate-200 bg-white py-3 px-4 text-base sm:text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
-    required
-  />
-</div>
+
+          {/* Card: Item Photo Upload */}
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm">
+            <div className="mb-4 flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <Image size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">2. Item Photo</h2>
+                <p className="text-xs text-slate-400">Show peers the real condition of your item</p>
+              </div>
+            </div>
+            <ImageUploader onUploaded={setImageUrl} userId={ownerId} />
+          </div>
         </div>
-        {error && <div className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">{error}</div>}
-        <button disabled={loading} className="mt-6 sm:mt-8 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70">
-          {loading && <LoaderCircle size={17} className="animate-spin" />}
-          List this item <ArrowRight size={17} />
-        </button>
+
+        {/* ── RIGHT COLUMN: Listing Type, Pricing & Live Preview ───── */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Card: Listing Type & Pricing */}
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm">
+            <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <Tag size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">3. Transaction Type & Pricing</h2>
+                <p className="text-xs text-slate-400">Choose between lending or selling</p>
+              </div>
+            </div>
+
+            {/* Segmented Selector for Sell vs Lend */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => setListingType('rent')}
+                className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 border text-center transition ${
+                  listingType === 'rent'
+                    ? 'border-teal-500 bg-teal-50/60 text-teal-900 shadow-sm ring-2 ring-teal-500/20'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${listingType === 'rent' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  <Clock size={20} />
+                </div>
+                <span className="text-sm font-extrabold">Lend / Rent</span>
+                <span className="text-[11px] text-slate-500">For a fixed duration</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setListingType('sell')}
+                className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 border text-center transition ${
+                  listingType === 'sell'
+                    ? 'border-violet-500 bg-violet-50/60 text-violet-900 shadow-sm ring-2 ring-violet-500/20'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${listingType === 'sell' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  <ShoppingBag size={20} />
+                </div>
+                <span className="text-sm font-extrabold">Sell Item</span>
+                <span className="text-[11px] text-slate-500">One-time purchase</span>
+              </button>
+            </div>
+
+            {/* Conditional Pricing Section: SELL */}
+            {listingType === 'sell' && (
+              <div className="space-y-4 rounded-2xl bg-violet-50/40 p-4 border border-violet-100">
+                <div>
+                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">
+                    Selling Price <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <IndianRupee size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      placeholder="e.g. 550"
+                      value={salePrice}
+                      onChange={(e) => setSalePrice(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-14 text-base sm:text-sm font-bold outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                      required
+                    />
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">INR</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-500">Full ownership transfers upon sale.</p>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                    Condition / Notes <span className="text-xs font-normal text-slate-400">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. In mint condition, used for 1 semester only"
+                    value={priceNote}
+                    onChange={(e) => setPriceNote(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-medium outline-none placeholder:text-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Conditional Pricing Section: LEND / RENT */}
+            {listingType === 'rent' && (
+              <div className="space-y-4 rounded-2xl bg-teal-50/40 p-4 border border-teal-100">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs sm:text-sm font-bold text-slate-700">Rental Rates</label>
+                  <span className="text-[11px] text-slate-500 font-medium">Enter any or all rates</span>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Per Day */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-teal-900 flex items-center gap-1">
+                        <Clock size={12} className="text-teal-600" /> Daily Rate
+                      </span>
+                      <span className="text-[11px] text-slate-400">Short-term loan</span>
+                    </div>
+                    <div className="relative">
+                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="e.g. 20"
+                        value={rateDay}
+                        onChange={(e) => setRateDay(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">/ day</span>
+                    </div>
+                  </div>
+
+                  {/* Per Month */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-sky-900 flex items-center gap-1">
+                        <Calendar size={12} className="text-sky-600" /> Monthly Rate
+                      </span>
+                      <span className="text-[11px] text-slate-400">Mid-term project</span>
+                    </div>
+                    <div className="relative">
+                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="e.g. 250"
+                        value={rateMonth}
+                        onChange={(e) => setRateMonth(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">/ mo</span>
+                    </div>
+                  </div>
+
+                  {/* Per Semester */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-indigo-900 flex items-center gap-1">
+                        <GraduationCap size={13} className="text-indigo-600" /> Semester Rate
+                      </span>
+                      <span className="text-[11px] text-slate-400">Full term course</span>
+                    </div>
+                    <div className="relative">
+                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="e.g. 600"
+                        value={rateSemester}
+                        onChange={(e) => setRateSemester(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">/ sem</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                    Lending Terms / Deposit <span className="text-xs font-normal text-slate-400">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Free for 2 days, ₹50 refundable deposit"
+                    value={priceNote}
+                    onChange={(e) => setPriceNote(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-medium outline-none placeholder:text-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Card: Live Feed Preview */}
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+                <Eye size={13} className="text-sky-500" /> Live Explore Preview
+              </span>
+              <span className="text-[11px] font-semibold text-slate-400">Preview as peers see it</span>
+            </div>
+
+            {/* Mock Item Card Preview */}
+            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+              <div className="relative h-36 bg-slate-100 overflow-hidden">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Preview" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-slate-300">
+                    {category === 'electronics' ? <Laptop size={32} /> : category === 'academics' ? <BookOpen size={32} /> : category === 'sports' ? <Compass size={32} /> : <Sparkles size={32} />}
+                  </div>
+                )}
+                <div className="absolute top-2.5 left-2.5">
+                  {listingType === 'sell' ? (
+                    <span className="flex items-center gap-1 rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                      <Tag size={10} /> For Sale
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 rounded-full bg-teal-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                      <Clock size={10} /> For Rent
+                    </span>
+                  )}
+                </div>
+                <div className="absolute top-2.5 right-2.5">
+                  <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-slate-700 shadow-sm border border-slate-200">
+                    {quantity} in stock
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3.5 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-sky-600 uppercase tracking-wide text-[10px]">{categoryLabels[category]}</span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">Available</span>
+                </div>
+                <p className="font-extrabold text-slate-900 text-sm truncate">{name.trim() || 'Item Name'}</p>
+
+                <div className="pt-1">
+                  {listingType === 'sell' ? (
+                    <div className="flex items-center gap-1 text-slate-900 font-extrabold text-sm">
+                      <IndianRupee size={13} />{salePrice || '—'}
+                      <span className="text-[10px] font-medium text-slate-400 ml-1">Buy now</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1 text-[11px]">
+                      {rateDay && <span className="rounded bg-teal-50 px-1.5 py-0.5 text-teal-700 font-bold">₹{rateDay}/day</span>}
+                      {rateMonth && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700 font-bold">₹{rateMonth}/mo</span>}
+                      {rateSemester && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 font-bold">₹{rateSemester}/sem</span>}
+                      {!rateDay && !rateMonth && !rateSemester && (
+                        <span className="text-slate-400 text-xs italic">Set rental rates above</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Submission and Error area */}
+          {error && (
+            <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-xs sm:text-sm font-semibold text-rose-600">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 py-3.5 px-6 text-sm font-extrabold text-white shadow-xl shadow-sky-600/25 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70"
+          >
+            {loading ? <LoaderCircle size={18} className="animate-spin" /> : <PackagePlus size={18} />}
+            {listingType === 'sell' ? 'Publish Sale Listing' : 'Publish Rental Listing'}
+            <ArrowRight size={17} />
+          </button>
+        </div>
       </form>
 
-      {/* ── My Listings ────────────────────────────── */}
-      <div className="mt-10 sm:mt-12">
-        <div className="mb-4 sm:mb-5 flex items-center justify-between">
+      {/* ── My Listings Section (Wide Grid) ────────────────────────── */}
+      <div className="mt-16 border-t border-slate-200/80 pt-10">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-lg sm:text-xl font-extrabold">Your listings</h2>
-            <p className="mt-0.5 text-xs sm:text-sm text-slate-400">Items you've shared on campus</p>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Your Listings</h2>
+            <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Items and equipment you have published on campus</p>
           </div>
-          {myItems.length > 0 && <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-extrabold text-sky-700">{myItems.length} item{myItems.length !== 1 ? 's' : ''}</span>}
+          {myItems.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-100 px-3 py-1 text-xs font-extrabold text-sky-700 self-start sm:self-auto">
+              <CheckCircle2 size={13} className="text-sky-500" />
+              {myItems.length} active listing{myItems.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
 
         {myItemsLoading ? (
@@ -1184,41 +1726,110 @@ function AddItem({
         ) : myItems.length === 0 ? (
           <Empty icon={<PackagePlus size={24} />} title="No listings yet" text="Items you add above will appear here." />
         ) : (
-          <div className="space-y-3">
-            {myItems.map((item) => (
-              <div key={item.equipment_id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm transition hover:border-slate-300">
-                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                  {item.image_url ? (
-                    <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {myItems.map((item) => {
+              const isSell = item.listing_type === 'sell';
+              return (
+                <div
+                  key={item.equipment_id}
+                  className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md hover:border-slate-300"
+                >
+                  <div className="relative h-44 bg-slate-100 overflow-hidden">
+                    {item.image_url ? (
                       <img src={item.image_url} alt={item.equipment_name} className="h-full w-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-400">
-                      <Image size={22} />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-sm font-extrabold text-slate-900">{item.equipment_name}</h3>
-                    <p className="mt-0.5 text-xs text-slate-400">{categoryLabels[item.category]}</p>
-                    {item.price_note && (
-                      <p className="mt-0.5 flex items-center gap-0.5 text-xs font-semibold text-amber-600 truncate">
-                        <IndianRupee size={11} />{item.price_note}
-                      </p>
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-slate-50 text-slate-300">
+                        <Image size={28} />
+                      </div>
                     )}
+                    {/* Tag for sell vs rent */}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1">
+                      {isSell ? (
+                        <span className="flex items-center gap-1 rounded-full bg-violet-600 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
+                          <Tag size={10} /> For Sale
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 rounded-full bg-teal-600 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
+                          <Clock size={10} /> For Rent
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="absolute top-2.5 right-2.5">
+                      <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-extrabold text-slate-700 shadow-sm border border-slate-200">
+                        {item.quantity || 1} in stock
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-1 flex-col p-4 justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-bold text-sky-600 uppercase tracking-wide">
+                          {categoryLabels[item.category]}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
+                            item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                      <h3 className="font-extrabold text-slate-900 text-sm sm:text-base line-clamp-1">
+                        {item.equipment_name}
+                      </h3>
+
+                      {/* Pricing summary */}
+                      <div className="mt-2">
+                        {isSell ? (
+                          <div className="flex items-center gap-1 text-slate-900 font-extrabold text-sm">
+                            <IndianRupee size={13} />
+                            {item.sale_price != null ? item.sale_price : (item.price_note || 'Negotiable')}
+                            <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-full ml-1">
+                              Sale
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1 text-[11px]">
+                            {item.rate_per_day != null && (
+                              <span className="rounded bg-teal-50 border border-teal-100 px-1.5 py-0.5 text-teal-700 font-bold">
+                                ₹{item.rate_per_day}/day
+                              </span>
+                            )}
+                            {item.rate_per_month != null && (
+                              <span className="rounded bg-sky-50 border border-sky-100 px-1.5 py-0.5 text-sky-700 font-bold">
+                                ₹{item.rate_per_month}/mo
+                              </span>
+                            )}
+                            {item.rate_per_semester != null && (
+                              <span className="rounded bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 text-indigo-700 font-bold">
+                                ₹{item.rate_per_semester}/sem
+                              </span>
+                            )}
+                            {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
+                              <span className="text-amber-600 font-semibold truncate flex items-center">
+                                <IndianRupee size={11} /> {item.price_note}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
+                      <button
+                        onClick={() => handleDelete(item.equipment_id)}
+                        className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-rose-600 py-1 px-2 rounded-lg hover:bg-rose-50 transition"
+                        title="Remove listing"
+                      >
+                        <Trash2 size={14} /> Remove Listing
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
-                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
-                  <button
-                    onClick={() => handleDelete(item.equipment_id)}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
-                    title="Remove listing"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

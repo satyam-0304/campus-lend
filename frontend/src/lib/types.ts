@@ -20,6 +20,8 @@ export type Profile = {
   address?: string;
 };
 
+export type ListingType = 'sell' | 'rent';
+
 export type EquipmentRow = {
   equipment_id: string;
   equipment_name: string;
@@ -29,6 +31,11 @@ export type EquipmentRow = {
   image_url: string | null;
   price_note: string | null;
   quantity: number; // Number of identical items available
+  listing_type?: ListingType;
+  sale_price?: number | null;
+  rate_per_day?: number | null;
+  rate_per_month?: number | null;
+  rate_per_semester?: number | null;
   created_at: string;
 };
 
