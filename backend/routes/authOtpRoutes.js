@@ -48,12 +48,15 @@ router.post('/send-otp', async (req, res) => {
 
     const emailResult = await sendOtpEmail(cleanEmail, otpCode);
 
+    if (!emailResult.success) {
+      return res.status(503).json({
+        error: emailResult.error || 'Failed to send verification email. Please check server email setup.',
+      });
+    }
+
     return res.json({
       success: true,
       message: 'Verification code sent to your PEC email',
-      mode: emailResult.mode,
-      // For local testing convenience if SMTP is not configured
-      devOtp: emailResult.mode === 'console' ? otpCode : undefined,
     });
   } catch (err) {
     console.error('[authOtpRoutes] Error sending OTP:', err);

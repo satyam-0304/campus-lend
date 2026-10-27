@@ -32,12 +32,43 @@ function getTransporter() {
 }
 
 /**
+ * Send via Resend REST API if RESEND_API_KEY is configured
+ */
+async function sendViaResend(toEmail, otpCode, htmlContent, textContent) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+
+  const fromAddress = process.env.EMAIL_FROM || 'CampusLend <onboarding@resend.dev>';
+  const subject = `CampusLend Verification Code: ${otpCode}`;
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: fromAddress,
+      to: [toEmail],
+      subject,
+      html: htmlContent,
+      text: textContent,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || `Resend API error status ${response.status}`);
+  }
+  console.log(`[EmailService] OTP sent to ${toEmail} via Resend (${data?.id})`);
+  return { success: true, mode: 'resend', id: data?.id };
+}
+
+/**
  * Send 6-digit verification PIN to a PEC email
  */
 async function sendOtpEmail(toEmail, otpCode) {
-  const transporter = getTransporter();
   const fromAddress = process.env.EMAIL_FROM || '"CampusLend" <no-reply@campuslend.pec.edu.in>';
-
   const subject = `CampusLend Verification Code: ${otpCode}`;
   const textContent = `Welcome to CampusLend!\n\nYour 6-digit verification code is: ${otpCode}\n\nThis code expires in 10 minutes. If you did not request this, please ignore this email.\n\n— The CampusLend Team`;
 
@@ -66,6 +97,18 @@ async function sendOtpEmail(toEmail, otpCode) {
     </div>
   `;
 
+  // 1. Try Resend if RESEND_API_KEY is configured
+  if (process.env.RESEND_API_KEY) {
+    try {
+      return await sendViaResend(toEmail, otpCode, htmlContent, textContent);
+    } catch (err) {
+      console.error('[EmailService] Resend failed:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 2. Try SMTP if credentials are configured
+  const transporter = getTransporter();
   if (transporter) {
     try {
       const info = await transporter.sendMail({
@@ -75,23 +118,23 @@ async function sendOtpEmail(toEmail, otpCode) {
         text: textContent,
         html: htmlContent,
       });
-      console.log(`[EmailService] OTP sent to ${toEmail}: ${info.messageId}`);
-      return { success: true, mode: 'smtp' };
+      console.log(`[EmailService] OTP sent to ${toEmail} via SMTP: ${info.messageId}`);
+      return { success: true, mode: 'smtp', id: info.messageId };
     } catch (err) {
-      console.error('[EmailService] SMTP error, falling back to console:', err.message);
+      console.error('[EmailService] SMTP error:', err.message);
+      return { success: false, error: err.message };
     }
   }
 
-  // Graceful fallback for local development or when SMTP is not configured
-  console.log('\n=============================================================');
-  console.log(' [CampusLend Email Service — Development Mode]');
-  console.log(` To:      ${toEmail}`);
-  console.log(` Subject: ${subject}`);
-  console.log(` OTP PIN: >>> ${otpCode} <<<`);
-  console.log(' (Configure SMTP_HOST, SMTP_USER, SMTP_PASS in backend/.env for live email)');
-  console.log('=============================================================\n');
+  // 3. Neither is configured
+  console.error('\n[EmailService] CRITICAL: No email provider configured!');
+  console.error('Please configure either RESEND_API_KEY or (SMTP_HOST, SMTP_USER, SMTP_PASS) in backend/.env to deliver OTPs to students.');
+  console.log(`[EmailService Dev Debug Log] Target: ${toEmail} | Code: ${otpCode}\n`);
 
-  return { success: true, mode: 'console', otp: otpCode };
+  return {
+    success: false,
+    error: 'Email delivery service is not configured on the server. Please configure SMTP or Resend credentials.',
+  };
 }
 
 module.exports = { sendOtpEmail };

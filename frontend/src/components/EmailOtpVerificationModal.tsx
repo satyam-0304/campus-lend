@@ -21,7 +21,6 @@ export function EmailOtpVerificationModal({
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(30);
-  const [devHint, setDevHint] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   // Auto-send OTP when modal opens
@@ -34,10 +33,7 @@ export function EmailOtpVerificationModal({
     let isMounted = true;
     (async () => {
       try {
-        const res = await api.sendOtp(email);
-        if (isMounted && res.devOtp) {
-          setDevHint(res.devOtp);
-        }
+        await api.sendOtp(email);
       } catch (err: any) {
         if (isMounted) setError(err?.message || 'Failed to send verification email');
       }
@@ -87,10 +83,9 @@ export function EmailOtpVerificationModal({
     setResending(true);
     setError('');
     try {
-      const res = await api.sendOtp(email);
+      await api.sendOtp(email);
       setResendCooldown(30);
       showToast('New verification PIN sent to your email');
-      if (res.devOtp) setDevHint(res.devOtp);
     } catch (err: any) {
       setError(err?.message || 'Could not resend verification email');
     } finally {
@@ -128,13 +123,6 @@ export function EmailOtpVerificationModal({
             {email}
           </p>
         </div>
-
-        {/* Development Mode Helper Banner */}
-        {devHint && (
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-center text-xs font-bold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
-            Development Mode PIN: <span className="underline font-black tracking-widest">{devHint}</span>
-          </div>
-        )}
 
         <form onSubmit={handleVerify} className="space-y-4">
           <div>
