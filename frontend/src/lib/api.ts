@@ -5,6 +5,9 @@ import type {
   Profile,
   Category,
   RequestStatus,
+  Review,
+  Message,
+  Notification,
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -39,9 +42,13 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export const api = {
-  // Equipment
+  // ── Equipment ───────────────────────────────────────────────
   async getEquipment(): Promise<EquipmentWithOwner[]> {
-    const res = await fetch(`${API_BASE_URL}/api/equipment`);
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const res = await fetch(`${API_BASE_URL}/api/equipment`, { headers });
     return handleResponse<EquipmentWithOwner[]>(res);
   },
 
@@ -82,7 +89,7 @@ export const api = {
     return handleResponse<void>(res);
   },
 
-  // Requests
+  // ── Requests & Dashboard ────────────────────────────────────
   async getDashboard(): Promise<{
     borrowed: BorrowRequestWithDetails[];
     lending: BorrowRequestWithDetails[];
@@ -101,6 +108,12 @@ export const api = {
     equipment_id: string;
     owner_id: string;
     requested_quantity?: number;
+    request_type?: 'sell' | 'rent';
+    rental_start_date?: string | null;
+    rental_end_date?: string | null;
+    total_amount?: number | null;
+    buyer_note?: string | null;
+    rental_duration_unit?: string | null;
   }): Promise<BorrowRequestWithDetails> {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_BASE_URL}/api/requests`, {
@@ -133,7 +146,7 @@ export const api = {
     return handleResponse<void>(res);
   },
 
-  // Profiles
+  // ── Profiles ────────────────────────────────────────────────
   async getMyProfile(): Promise<Profile> {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_BASE_URL}/api/profiles/me`, {
@@ -150,5 +163,109 @@ export const api = {
       body: JSON.stringify(updates),
     });
     return handleResponse<Profile>(res);
+  },
+
+  // ── Reviews ─────────────────────────────────────────────────
+  async getEquipmentReviews(equipmentId: string): Promise<Review[]> {
+    const res = await fetch(`${API_BASE_URL}/api/reviews/equipment/${equipmentId}`);
+    return handleResponse<Review[]>(res);
+  },
+
+  async createReview(payload: {
+    request_id: string;
+    equipment_id: string;
+    rating: number;
+    comment?: string;
+  }): Promise<Review> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/reviews`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<Review>(res);
+  },
+
+  // ── Messages / Chat ─────────────────────────────────────────
+  async getConversation(params: {
+    other_user_id?: string;
+    request_id?: string;
+    equipment_id?: string;
+  }): Promise<Message[]> {
+    const headers = await getAuthHeader();
+    const query = new URLSearchParams();
+    if (params.other_user_id) query.set('other_user_id', params.other_user_id);
+    if (params.request_id) query.set('request_id', params.request_id);
+    if (params.equipment_id) query.set('equipment_id', params.equipment_id);
+
+    const res = await fetch(`${API_BASE_URL}/api/messages/conversation?${query.toString()}`, {
+      headers,
+    });
+    return handleResponse<Message[]>(res);
+  },
+
+  async sendMessage(payload: {
+    recipient_id: string;
+    equipment_id?: string | null;
+    request_id?: string | null;
+    content: string;
+  }): Promise<Message> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/messages`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<Message>(res);
+  },
+
+  // ── Notifications ───────────────────────────────────────────
+  async getNotifications(): Promise<{
+    notifications: Notification[];
+    unread_count: number;
+  }> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/notifications`, {
+      headers,
+    });
+    return handleResponse<{
+      notifications: Notification[];
+      unread_count: number;
+    }>(res);
+  },
+
+  async markNotificationRead(id: string): Promise<void> {
+    const headers = await getAuthHeader();
+    await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+      method: 'PUT',
+      headers,
+    });
+  },
+
+  async markAllNotificationsRead(): Promise<void> {
+    const headers = await getAuthHeader();
+    await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
+      method: 'PUT',
+      headers,
+    });
+  },
+
+  // ── Email OTP ───────────────────────────────────────────────
+  async sendOtp(email: string): Promise<{ success: boolean; message: string; devOtp?: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    return handleResponse<{ success: boolean; message: string; devOtp?: string }>(res);
+  },
+
+  async verifyOtp(email: string, otp: string): Promise<{ success: boolean; verified: boolean; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+    return handleResponse<{ success: boolean; verified: boolean; message: string }>(res);
   },
 };

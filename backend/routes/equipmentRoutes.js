@@ -11,17 +11,51 @@ const VALID_CATEGORIES = ['academics', 'electronics', 'sports', 'event_wear'];
 const PUBLIC_EQUIPMENT_SELECT =
   'equipment_id, equipment_name, category, status, owner_id, image_url, image_back_url, price_note, ' +
   'quantity, listing_type, sale_price, rate_per_day, rate_per_month, rate_per_semester, created_at, ' +
-  'owner:profiles!owner_id(id, full_name, hostel_name, branch, batch_year)';
+  'owner:profiles!owner_id(id, full_name, hostel_name, branch, batch_year, degree)';
 
 // Owner equipment select (used for /mine or newly created listings by the owner):
 const OWNER_EQUIPMENT_SELECT =
   'equipment_id, equipment_name, category, status, owner_id, image_url, image_back_url, price_note, ' +
   'quantity, listing_type, sale_price, rate_per_day, rate_per_month, rate_per_semester, created_at, ' +
-  'owner:profiles!owner_id(id, full_name, hostel_name, room_number, phone_number, branch, batch_year)';
+  'owner:profiles!owner_id(id, full_name, hostel_name, room_number, phone_number, branch, batch_year, degree)';
+
+// Helper to attach verified review stats to equipment items
+async function enrichWithRatings(equipmentList) {
+  if (!equipmentList || equipmentList.length === 0) return equipmentList;
+  try {
+    const ids = equipmentList.map((e) => e.equipment_id);
+    const { data: reviews } = await serviceClient
+      .from('reviews')
+      .select('equipment_id, rating')
+      .in('equipment_id', ids);
+
+    const statsMap = {};
+    (reviews || []).forEach((r) => {
+      if (!statsMap[r.equipment_id]) {
+        statsMap[r.equipment_id] = { total: 0, count: 0 };
+      }
+      statsMap[r.equipment_id].total += r.rating;
+      statsMap[r.equipment_id].count += 1;
+    });
+
+    return equipmentList.map((item) => {
+      const stats = statsMap[item.equipment_id];
+      const avg = stats ? Number((stats.total / stats.count).toFixed(1)) : 0;
+      const count = stats ? stats.count : 0;
+      return {
+        ...item,
+        avg_rating: avg,
+        review_count: count,
+      };
+    });
+  } catch {
+    return equipmentList.map((item) => ({ ...item, avg_rating: 0, review_count: 0 }));
+  }
+}
 
 // ── GET / ──────────────────────────────────────────────────────────
-// Public. Returns all available equipment with sanitized owner info (room_number kept private).
-router.get('/', async (_req, res) => {
+// Public. Returns all available equipment with sanitized owner info (room_number kept private) and rating stats.
+router.get('/', async (req, res) => {
   const { data, error } = await serviceClient
     .from('equipment')
     .select(PUBLIC_EQUIPMENT_SELECT)
@@ -29,7 +63,24 @@ router.get('/', async (_req, res) => {
     .order('created_at', { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+
+  // Sanitize phone numbers for unauthenticated visitors
+  const hasAuth = Boolean(req.headers.authorization);
+  const sanitized = (data || []).map((item) => {
+    if (!hasAuth && item.owner) {
+      return {
+        ...item,
+        owner: {
+          ...item.owner,
+          phone_number: '', // hide private contact until logged in
+        },
+      };
+    }
+    return item;
+  });
+
+  const enriched = await enrichWithRatings(sanitized);
+  res.json(enriched);
 });
 
 // ── GET /mine ──────────────────────────────────────────────────────
@@ -42,7 +93,9 @@ router.get('/mine', authMiddleware, async (req, res) => {
     .order('created_at', { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+
+  const enriched = await enrichWithRatings(data || []);
+  res.json(enriched);
 });
 
 // ── POST / ─────────────────────────────────────────────────────────

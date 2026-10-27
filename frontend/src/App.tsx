@@ -1,4 +1,4 @@
-﻿import {
+import {
   AlertTriangle,
   ArrowRight,
   Bell,
@@ -54,7 +54,16 @@ import type {
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
 import { ThemeToggle } from './components/ThemeToggle';
+import { SessionWarningModal } from './components/SessionWarningModal';
+import { useInactivityTimeout } from '@/lib/useInactivityTimeout';
 import { PEC_HOSTELS, parsePecEmail, isValidPecEmail } from '@/lib/pecEmail';
+import { ProductCard } from './components/marketplace/ProductCard';
+import { ProductDetailModal } from './components/marketplace/ProductDetailModal';
+import { SellerHub } from './components/marketplace/SellerHub';
+import { ChatDrawer } from './components/marketplace/ChatDrawer';
+import { ReviewModal } from './components/marketplace/ReviewModal';
+import { NotificationPopover } from './components/marketplace/NotificationPopover';
+import { EmailOtpVerificationModal } from './components/EmailOtpVerificationModal';
 
 type Page = 'explore' | 'add' | 'dashboard' | 'profile';
 
@@ -112,6 +121,42 @@ function App() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
+  // Session timeout warning modal
+  const [sessionWarningOpen, setSessionWarningOpen] = useState(false);
+
+  // Marketplace state
+  const [selectedProduct, setSelectedProduct] = useState<EquipmentWithOwner | null>(null);
+  const [chatState, setChatState] = useState<{
+    isOpen: boolean;
+    recipientId: string;
+    recipientName: string;
+    equipmentId?: string;
+    equipmentName?: string;
+    requestId?: string;
+  }>({
+    isOpen: false,
+    recipientId: '',
+    recipientName: '',
+  });
+  const [reviewModalState, setReviewModalState] = useState<{
+    isOpen: boolean;
+    requestId: string;
+    equipmentId: string;
+    equipmentName: string;
+  }>({
+    isOpen: false,
+    requestId: '',
+    equipmentId: '',
+    equipmentName: '',
+  });
+  const [otpModalState, setOtpModalState] = useState<{
+    isOpen: boolean;
+    email: string;
+  }>({
+    isOpen: false,
+    email: '',
+  });
+
   const openAuth = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
     setAuthModalOpen(true);
@@ -121,6 +166,37 @@ function App() {
     setToast(message);
     window.setTimeout(() => setToast(null), 2800);
   }, []);
+
+  const handleMarketplaceRequest = async (payload: {
+    item: EquipmentWithOwner;
+    quantity: number;
+    startDate?: string;
+    endDate?: string;
+    totalAmount?: number;
+    buyerNote?: string;
+  }) => {
+    if (!requireProfile({ type: 'request', item: payload.item })) return;
+    try {
+      await api.createRequest({
+        equipment_id: payload.item.equipment_id,
+        owner_id: payload.item.owner_id,
+        requested_quantity: payload.quantity,
+        request_type: payload.item.listing_type,
+        rental_start_date: payload.startDate,
+        rental_end_date: payload.endDate,
+        total_amount: payload.totalAmount,
+        buyer_note: payload.buyerNote,
+      });
+      showToast(
+        payload.item.listing_type === 'sell'
+          ? 'Purchase request sent to owner 🎉'
+          : 'Rental request sent to owner 🎉'
+      );
+    } catch (err: any) {
+      showToast(err?.message || 'Could not send request. Please try again.');
+      throw err;
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -179,6 +255,16 @@ function App() {
     setProfile(null);
   };
 
+  // ── Inactivity auto-logout ──────────────────────────────────────
+  // 30 min idle → show warning. 2 more min idle → force logout.
+  useInactivityTimeout({
+    idleMs: 30 * 60 * 1000,
+    warnMs: 2 * 60 * 1000,
+    active: !!session,
+    onWarn: () => setSessionWarningOpen(true),
+    onTimeout: handleLogout,
+  });
+
   // Called by Explore/AddItem to check if profile is complete before acting
   const requireProfile = (action: PendingAction): boolean => {
     const hasPhone = Boolean(profile?.phone_number?.trim());
@@ -215,6 +301,7 @@ function App() {
           onClose={() => setAuthModalOpen(false)}
           initialMode={authMode}
           onSuccess={showToast}
+          onNeedOtpVerify={(em) => setOtpModalState({ isOpen: true, email: em })}
         />
       </>
     );
@@ -232,6 +319,7 @@ function App() {
           onClose={() => setAuthModalOpen(false)}
           initialMode={authMode}
           onSuccess={showToast}
+          onNeedOtpVerify={(em) => setOtpModalState({ isOpen: true, email: em })}
         />
         {toast && (
           <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-900 dark:bg-slate-800 dark:ring-1 dark:ring-slate-700 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold text-white shadow-2xl max-w-[calc(100vw-2rem)] text-center">
@@ -281,6 +369,7 @@ function App() {
             requireProfile={requireProfile}
             pendingAction={pendingAction}
             clearPendingAction={() => setPendingAction(null)}
+            onOpenDetails={(item) => setSelectedProduct(item)}
           />
         )}
         {page === 'add' && (
@@ -294,7 +383,31 @@ function App() {
             clearPendingAction={() => setPendingAction(null)}
           />
         )}
-        {page === 'dashboard' && <Dashboard userId={session.user.id} showToast={showToast} />}
+        {page === 'dashboard' && (
+          <SellerHub
+            userId={session.user.id}
+            showToast={showToast}
+            onOpenChat={(recipientId, recipientName, eqId, eqName, reqId) =>
+              setChatState({
+                isOpen: true,
+                recipientId,
+                recipientName,
+                equipmentId: eqId,
+                equipmentName: eqName,
+                requestId: reqId,
+              })
+            }
+            onOpenReview={(reqId, eqId, eqName) =>
+              setReviewModalState({
+                isOpen: true,
+                requestId: reqId,
+                equipmentId: eqId,
+                equipmentName: eqName,
+              })
+            }
+            onNavigateToAddItem={() => setPage('add')}
+          />
+        )}
         {page === 'profile' && (
           <ProfilePage
             profile={safeProfile}
@@ -305,7 +418,59 @@ function App() {
         )}
       </main>
 
-      {/* Profile completion modal â€” shown when room/phone not filled yet */}
+      {/* Product Detail Modal / Bottom Drawer */}
+      <ProductDetailModal
+        item={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        currentUser={safeProfile}
+        onRequest={handleMarketplaceRequest}
+        onOpenChat={(recipientId, recipientName, equipmentId, equipmentName) => {
+          setSelectedProduct(null);
+          setChatState({
+            isOpen: true,
+            recipientId,
+            recipientName,
+            equipmentId,
+            equipmentName,
+          });
+        }}
+      />
+
+      {/* In-App Realtime Chat Drawer */}
+      <ChatDrawer
+        isOpen={chatState.isOpen}
+        onClose={() => setChatState((s) => ({ ...s, isOpen: false }))}
+        currentUserId={session.user.id}
+        recipientId={chatState.recipientId}
+        recipientName={chatState.recipientName}
+        equipmentId={chatState.equipmentId}
+        equipmentName={chatState.equipmentName}
+        requestId={chatState.requestId}
+      />
+
+      {/* Transaction Review Modal */}
+      <ReviewModal
+        isOpen={reviewModalState.isOpen}
+        onClose={() => setReviewModalState((s) => ({ ...s, isOpen: false }))}
+        requestId={reviewModalState.requestId}
+        equipmentId={reviewModalState.equipmentId}
+        equipmentName={reviewModalState.equipmentName}
+        onSuccess={showToast}
+      />
+
+      {/* Email OTP Verification Modal */}
+      <EmailOtpVerificationModal
+        isOpen={otpModalState.isOpen}
+        email={otpModalState.email}
+        onClose={() => setOtpModalState((s) => ({ ...s, isOpen: false }))}
+        onVerified={() => {
+          showToast('Email verified! You can now log in.');
+        }}
+        showToast={showToast}
+      />
+
+      {/* Profile completion modal — shown when room/phone not filled yet */}
       {profileModalOpen && (
         <ProfileCompletionModal
           profile={safeProfile}
@@ -315,6 +480,14 @@ function App() {
           showToast={showToast}
         />
       )}
+
+      {/* Session timeout warning — shown after 30 min of inactivity */}
+      <SessionWarningModal
+        isOpen={sessionWarningOpen}
+        warnMs={2 * 60 * 1000}
+        onStayLoggedIn={() => setSessionWarningOpen(false)}
+        onLogout={() => { setSessionWarningOpen(false); handleLogout(); }}
+      />
 
       {toast && (
         <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-900 dark:bg-slate-800 dark:ring-1 dark:ring-slate-700 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold text-white shadow-2xl max-w-[calc(100vw-2rem)] text-center">
@@ -705,7 +878,7 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
         </nav>
         <div className="relative flex items-center gap-2 sm:gap-3">
           <ThemeToggle size="md" />
-          <button className="hidden rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 sm:block"><Bell size={19} /></button>
+          <NotificationPopover onNavigateToDashboard={() => setPage('dashboard')} />
           <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-slate-50 p-1 sm:p-1.5 sm:pr-2.5 transition hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-xs font-extrabold text-sky-700 dark:bg-sky-950 dark:text-sky-300">{initials}</div>
             <ChevronDown size={15} className="text-slate-400 hidden sm:block" />
@@ -749,6 +922,7 @@ function Explore({
   requireProfile,
   pendingAction,
   clearPendingAction,
+  onOpenDetails,
 }: {
   userId: string;
   showToast: (msg: string) => void;
@@ -756,6 +930,7 @@ function Explore({
   requireProfile: (action: PendingAction) => boolean;
   pendingAction: PendingAction | null;
   clearPendingAction: () => void;
+  onOpenDetails: (item: EquipmentWithOwner) => void;
 }) {
   const [items, setItems] = useState<EquipmentWithOwner[]>([]);
   const [myRequests, setMyRequests] = useState<Record<string, { status: RequestStatus; requestId: string }>>({});
@@ -869,12 +1044,12 @@ function Explore({
       ) : filtered.length ? (
         <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
-            <ItemCard
+            <ProductCard
               key={item.equipment_id}
               item={item}
               isOwn={item.owner_id === userId}
               requestEntry={myRequests[item.equipment_id]}
-              onRequest={handleRequest}
+              onOpenDetails={onOpenDetails}
               onCancelRequest={handleCancelRequest}
             />
           ))}

@@ -8,6 +8,10 @@ const cors = require('cors');
 const equipmentRoutes = require('./routes/equipmentRoutes');
 const requestRoutes = require('./routes/requestRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const authOtpRoutes = require('./routes/authOtpRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,13 +35,12 @@ app.use(
   })
 );
 
-
 // ── Body parser ────────────────────────────────────────────────
 app.use(express.json());
 
 // ── Request Logger ─────────────────────────────────────────────
 app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.url} - body:`, req.body);
+  console.log(`[${req.method}] ${req.url}`);
   next();
 });
 
@@ -45,6 +48,10 @@ app.use((req, res, next) => {
 app.use('/api/equipment', equipmentRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/auth', authOtpRoutes);
 
 // ── Health check ───────────────────────────────────────────────
 app.get('/health', (_req, res) =>

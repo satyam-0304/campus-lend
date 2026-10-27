@@ -8,6 +8,7 @@ interface AuthModalProps {
   onClose: () => void;
   initialMode?: 'login' | 'signup';
   onSuccess: (msg: string) => void;
+  onNeedOtpVerify?: (email: string) => void;
 }
 
 /** Reusable password input with show/hide toggle */
@@ -50,7 +51,13 @@ function PasswordInput({
   );
 }
 
-export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthModalProps) {
+export function AuthModal({
+  isOpen,
+  onClose,
+  initialMode = 'login',
+  onSuccess,
+  onNeedOtpVerify,
+}: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -102,8 +109,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
         }
 
         if (data?.user) {
-          onSuccess('Account created — welcome to CampusLend');
           onClose();
+          if (onNeedOtpVerify) {
+            onNeedOtpVerify(cleanEmail);
+          } else {
+            onSuccess('Account created — welcome to CampusLend');
+          }
         } else {
           setError('Signup failed. Please try again.');
         }
