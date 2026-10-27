@@ -51,6 +51,7 @@ import type {
 } from '@/lib/types';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
+import { ThemeToggle } from './components/ThemeToggle';
 import { PEC_HOSTELS, parsePecEmail, isValidPecEmail } from '@/lib/pecEmail';
 
 type Page = 'explore' | 'add' | 'dashboard' | 'profile';
@@ -231,7 +232,7 @@ function App() {
           onSuccess={showToast}
         />
         {toast && (
-          <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-900 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold text-white shadow-2xl max-w-[calc(100vw-2rem)] text-center">
+          <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-900 dark:bg-slate-800 dark:ring-1 dark:ring-slate-700 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold text-white shadow-2xl max-w-[calc(100vw-2rem)] text-center">
             <Check size={16} className="text-emerald-400 shrink-0" />
             <span className="truncate">{toast}</span>
           </div>
@@ -244,23 +245,25 @@ function App() {
   // null case so we never block rendering on this network call.
   const userPecMeta = session?.user?.email ? parsePecEmail(session.user.email) : null;
 
+  const userMeta = (session?.user?.user_metadata || {}) as Record<string, any>;
+
   // profile can be null briefly — guard downstream components with profile!
   const safeProfile: Profile = profile ?? {
     id: session.user.id,
-    full_name: session.user.user_metadata?.full_name || userPecMeta?.formattedName || '',
+    full_name: userMeta.full_name || userPecMeta?.formattedName || '',
     room_number: '',
     phone_number: '',
-    student_id: session.user.user_metadata?.student_id || '',
-    degree: session.user.user_metadata?.degree || userPecMeta?.degree || '',
-    batch_year: session.user.user_metadata?.batch_year || userPecMeta?.batchYear || '',
-    branch: session.user.user_metadata?.branch || userPecMeta?.branchName || userPecMeta?.branchCode || '',
+    student_id: userMeta.student_id || '',
+    degree: userMeta.degree || userPecMeta?.degree || '',
+    batch_year: userMeta.batch_year || userPecMeta?.batchYear || '',
+    branch: userMeta.branch || userPecMeta?.branchName || userPecMeta?.branchCode || '',
     residence_type: '',
     hostel_name: '',
     address: '',
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200">
       <Navbar
         page={page}
         setPage={setPage}
@@ -312,7 +315,7 @@ function App() {
       )}
 
       {toast && (
-        <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-900 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold text-white shadow-2xl max-w-[calc(100vw-2rem)] text-center">
+        <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-900 dark:bg-slate-800 dark:ring-1 dark:ring-slate-700 px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold text-white shadow-2xl max-w-[calc(100vw-2rem)] text-center">
           <Check size={16} className="text-emerald-400 shrink-0" />
           <span className="truncate">{toast}</span>
         </div>
@@ -414,50 +417,50 @@ function ProfileCompletionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-3 sm:p-5 backdrop-blur-sm">
-      <div className="my-auto w-full max-w-lg max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-3xl bg-white p-5 sm:p-8 shadow-2xl ring-1 ring-slate-100 animate-[fadeSlideUp_0.2s_ease-out]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 dark:bg-black/75 p-3 sm:p-5 backdrop-blur-sm">
+      <div className="my-auto w-full max-w-lg max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-3xl bg-white p-5 sm:p-8 shadow-2xl ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800 animate-[fadeSlideUp_0.2s_ease-out]">
         <div className="mb-5 flex items-start justify-between">
           <div>
-            <div className="mb-3 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+            <div className="mb-3 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
               <GraduationCap size={22} />
             </div>
-            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">Complete your student profile</h2>
-            <p className="mt-1 text-xs sm:text-sm leading-6 text-slate-500">
+            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">Complete your student profile</h2>
+            <p className="mt-1 text-xs sm:text-sm leading-6 text-slate-500 dark:text-slate-400">
               CampusLend uses this info so peers can verify items and coordinate handoffs.
             </p>
           </div>
           <button
             onClick={onCancel}
-            className="flex h-10 w-10 items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition"
+            className="flex h-10 w-10 items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Auto-detected PEC badge banner */}
-        <div className="mb-5 rounded-2xl bg-sky-50/70 border border-sky-100 p-3.5 flex items-center gap-3 text-xs sm:text-sm">
+        <div className="mb-5 rounded-2xl bg-sky-50/70 border border-sky-100 p-3.5 flex items-center gap-3 text-xs sm:text-sm dark:bg-sky-950/40 dark:border-sky-900/40">
           <div className="h-9 w-9 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 font-extrabold">
             PEC
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-slate-900 truncate">
+            <p className="font-bold text-slate-900 dark:text-white truncate">
               {degree} {branch}
             </p>
-            <p className="text-xs text-sky-700 truncate">
+            <p className="text-xs text-sky-700 dark:text-sky-300 truncate">
               Joining Batch {batchYear} • {userEmail || 'Verified PEC Student'}
             </p>
           </div>
         </div>
 
-        {error && <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">{error}</div>}
+        {error && <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">{error}</div>}
 
         <form onSubmit={submit} className="space-y-4">
           <Field label="Full name" placeholder="Your full name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
 
           <div>
             <div className="flex justify-between items-center mb-1.5 sm:mb-2">
-              <label className="text-xs sm:text-sm font-bold text-slate-700">Student ID (SID)</label>
-              <span className={`text-xs ${studentId.length === 8 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+              <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Student ID (SID)</label>
+              <span className={`text-xs ${studentId.length === 8 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-400 dark:text-slate-500'}`}>
                 {studentId.length}/8 digits
               </span>
             </div>
@@ -468,12 +471,12 @@ function ProfileCompletionModal({
               maxLength={8}
               onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 8))}
               required
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Mobile number</label>
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Mobile number</label>
             <input
               type="tel"
               placeholder="9876543210"
@@ -481,19 +484,19 @@ function ProfileCompletionModal({
               maxLength={10}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               required
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
             />
           </div>
 
           {/* Residence Type Selector */}
           <div>
-            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Campus Residence</label>
-            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Campus Residence</label>
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
               <button
                 type="button"
                 onClick={() => setResidenceType('hosteller')}
                 className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
-                  residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                  residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                 }`}
               >
                 <Building2 size={15} />
@@ -503,7 +506,7 @@ function ProfileCompletionModal({
                 type="button"
                 onClick={() => setResidenceType('day_scholar')}
                 className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
-                  residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                  residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                 }`}
               >
                 <MapPin size={15} />
@@ -515,50 +518,50 @@ function ProfileCompletionModal({
           {residenceType === 'hosteller' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in duration-150">
               <div>
-                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">PEC Hostel</label>
+                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">PEC Hostel</label>
                 <select
                   value={hostel}
                   onChange={(e) => setHostel(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base sm:text-sm font-medium outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base sm:text-sm font-medium outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white"
                 >
                   <option value="">Select hostel...</option>
                   {PEC_HOSTELS.map((h) => (
-                    <option key={h} value={h}>
+                    <option key={h} value={h} className="dark:bg-slate-800 dark:text-white">
                       {h} Hostel
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Room number</label>
+                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label>
                 <input
                   type="text"
                   placeholder="e.g. 204-B"
                   value={room}
                   onChange={(e) => setRoom(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
           ) : (
             <div className="animate-in fade-in duration-150">
-              <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Locality / Address</label>
+              <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Locality / Address</label>
               <input
                 type="text"
                 placeholder="e.g. Sector 15-D, Chandigarh"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
               />
             </div>
           )}
 
           <button
             disabled={loading}
-            className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-[0.99] disabled:opacity-70"
+            className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500 active:scale-[0.99] disabled:opacity-70"
           >
             {loading && <LoaderCircle size={17} className="animate-spin" />}
             Save & continue <ArrowRight size={17} />
@@ -638,34 +641,34 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sky-50 px-4 py-8 sm:px-6 sm:py-12">
+    <div className="flex min-h-screen items-center justify-center bg-sky-50 dark:bg-slate-950 px-4 py-8 sm:px-6 sm:py-12 transition-colors duration-200">
       <div className="w-full max-w-md">
         <div className="mb-6 sm:mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
             <img src="/assets/images/logo.jpeg" alt="CampusLend" className="h-full w-full object-cover" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">CampusLend</h1>
-          <p className="mt-2 text-sm text-slate-500">Share more. Carry less.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">CampusLend</h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Share more. Carry less.</p>
         </div>
-        <div className="rounded-3xl bg-white p-5 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100 sm:p-8">
-          <div className="mb-6 sm:mb-7 grid grid-cols-2 rounded-xl bg-slate-50 p-1">
-            <button type="button" onClick={() => setMode('login')} className={`flex min-h-[44px] items-center justify-center rounded-lg py-2.5 text-sm font-bold transition ${mode === 'login' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Log in</button>
-            <button type="button" onClick={() => setMode('signup')} className={`flex min-h-[44px] items-center justify-center rounded-lg py-2.5 text-sm font-bold transition ${mode === 'signup' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Sign up</button>
+        <div className="rounded-3xl bg-white p-5 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800 dark:shadow-none sm:p-8">
+          <div className="mb-6 sm:mb-7 grid grid-cols-2 rounded-xl bg-slate-50 dark:bg-slate-800 p-1">
+            <button type="button" onClick={() => setMode('login')} className={`flex min-h-[44px] items-center justify-center rounded-lg py-2.5 text-sm font-bold transition ${mode === 'login' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'}`}>Log in</button>
+            <button type="button" onClick={() => setMode('signup')} className={`flex min-h-[44px] items-center justify-center rounded-lg py-2.5 text-sm font-bold transition ${mode === 'signup' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'}`}>Sign up</button>
           </div>
-          <h2 className="text-xl font-extrabold text-slate-900">{mode === 'login' ? 'Welcome back' : 'Join your campus'}</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">{mode === 'login' ? 'Find the things you need, right where you live.' : 'Create an account to lend and borrow with ease.'}</p>
-          {error && <div className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">{error}</div>}
+          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">{mode === 'login' ? 'Welcome back' : 'Join your campus'}</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{mode === 'login' ? 'Find the things you need, right where you live.' : 'Create an account to lend and borrow with ease.'}</p>
+          {error && <div className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">{error}</div>}
           <form onSubmit={submit} className="mt-6 space-y-4">
             {mode === 'signup' && <Field label="Full name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} required />}
             <Field label="Email" type="email" placeholder="john@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <Field label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            <button disabled={loading} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-70">
+            <button disabled={loading} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-70">
               {loading && <LoaderCircle size={17} className="animate-spin" />}
               {mode === 'login' ? 'Log in' : 'Create account'}
               <ArrowRight size={17} />
             </button>
           </form>
-          <p className="mt-6 text-center text-xs leading-5 text-slate-400">By continuing, you agree to keep your campus community safe and respectful.</p>
+          <p className="mt-6 text-center text-xs leading-5 text-slate-400 dark:text-slate-500">By continuing, you agree to keep your campus community safe and respectful.</p>
         </div>
       </div>
     </div>
@@ -683,46 +686,49 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
     { id: 'dashboard', label: 'Dashboard', icon: FileText },
   ];
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/90 backdrop-blur-lg shadow-sm">
+    <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/90 backdrop-blur-lg shadow-sm dark:border-slate-800 dark:bg-slate-900/90 transition-colors duration-200">
       <div className="mx-auto flex h-16 sm:h-20 max-w-[1360px] items-center justify-between px-4 sm:px-8 lg:px-12">
         <button onClick={() => setPage('explore')} className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
-          <div className="h-9 w-9 sm:h-10 sm:w-10 overflow-hidden rounded-2xl bg-sky-50 ring-1 ring-slate-200/80"><img src="/assets/images/logo.jpeg" alt="CampusLend" className="h-full w-full object-cover" /></div>
-          <span className="text-lg sm:text-xl font-extrabold tracking-tight">Campus<span className="text-sky-600">Lend</span></span>
+          <div className="h-9 w-9 sm:h-10 sm:w-10 overflow-hidden rounded-2xl bg-sky-50 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:ring-slate-700">
+            <img src="/assets/images/logo.jpeg" alt="CampusLend" className="h-full w-full object-cover" />
+          </div>
+          <span className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Campus<span className="text-sky-600 dark:text-sky-400">Lend</span></span>
         </button>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => setPage(id)} className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${page === id ? 'bg-sky-50 text-sky-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}>
+            <button key={id} onClick={() => setPage(id)} className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${page === id ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}>
               <Icon size={17} />{label}
             </button>
           ))}
         </nav>
         <div className="relative flex items-center gap-2 sm:gap-3">
-          <button className="hidden rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 sm:block"><Bell size={19} /></button>
-          <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-slate-50 p-1 sm:p-1.5 sm:pr-2.5 transition hover:bg-slate-100">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-xs font-extrabold text-sky-700">{initials}</div>
+          <ThemeToggle size="md" />
+          <button className="hidden rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 sm:block"><Bell size={19} /></button>
+          <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-slate-50 p-1 sm:p-1.5 sm:pr-2.5 transition hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-xs font-extrabold text-sky-700 dark:bg-sky-950 dark:text-sky-300">{initials}</div>
             <ChevronDown size={15} className="text-slate-400 hidden sm:block" />
           </button>
           {userMenuOpen && (
-            <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl">
-              <button onClick={() => { setPage('profile'); setUserMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"><UserRound size={16} />Profile</button>
-              <button onClick={onLogout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50"><LogOut size={16} />Log out</button>
+            <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+              <button onClick={() => { setPage('profile'); setUserMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"><UserRound size={16} />Profile</button>
+              <button onClick={onLogout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"><LogOut size={16} />Log out</button>
             </div>
           )}
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 md:hidden">{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 md:hidden">{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
         </div>
       </div>
       {mobileOpen && (
-        <nav className="border-t border-slate-100 px-4 py-3 md:hidden space-y-1 bg-white">
+        <nav className="border-t border-slate-100 px-4 py-3 md:hidden space-y-1 bg-white dark:border-slate-800 dark:bg-slate-900">
           {links.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => { setPage(id); setMobileOpen(false); }} className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold ${page === id ? 'bg-sky-50 text-sky-700' : 'text-slate-600 hover:bg-slate-50'}`}>
+            <button key={id} onClick={() => { setPage(id); setMobileOpen(false); }} className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold ${page === id ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'}`}>
               <Icon size={17} />{label}
             </button>
           ))}
-          <div className="my-1 border-t border-slate-100 pt-1">
-            <button onClick={() => { setPage('profile'); setMobileOpen(false); }} className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold ${page === 'profile' ? 'bg-sky-50 text-sky-700' : 'text-slate-600 hover:bg-slate-50'}`}>
+          <div className="my-1 border-t border-slate-100 dark:border-slate-800 pt-1">
+            <button onClick={() => { setPage('profile'); setMobileOpen(false); }} className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold ${page === 'profile' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'}`}>
               <UserRound size={17} />Profile
             </button>
-            <button onClick={() => { setMobileOpen(false); onLogout(); }} className="flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50">
+            <button onClick={() => { setMobileOpen(false); onLogout(); }} className="flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40">
               <LogOut size={17} />Log out
             </button>
           </div>
@@ -827,31 +833,31 @@ function Explore({
     <div>
       <div className="mb-8 sm:mb-10 flex flex-col justify-between gap-4 sm:gap-6 lg:flex-row lg:items-end">
         <div>
-          <div className="mb-3 sm:mb-4 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-700"><Sparkles size={14} /> Campus exchange</div>
-          <h1 className="max-w-xl text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">Borrow what you need.<br /><span className="text-sky-600">Lend what you can.</span></h1>
-          <p className="mt-3 sm:mt-4 max-w-lg text-sm sm:text-base leading-relaxed text-slate-500">A simpler way to share useful things with the people around you.</p>
+          <div className="mb-3 sm:mb-4 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"><Sparkles size={14} /> Campus exchange</div>
+          <h1 className="max-w-xl text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Borrow what you need.<br /><span className="text-sky-600 dark:text-sky-400">Lend what you can.</span></h1>
+          <p className="mt-3 sm:mt-4 max-w-lg text-sm sm:text-base leading-relaxed text-slate-500 dark:text-slate-400">A simpler way to share useful things with the people around you.</p>
         </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-sm w-fit">
-          <div className="flex -space-x-2"><div className="h-8 w-8 rounded-full border-2 border-white bg-amber-100" /><div className="h-8 w-8 rounded-full border-2 border-white bg-sky-100" /><div className="h-8 w-8 rounded-full border-2 border-white bg-emerald-100" /></div>
-          <div><p className="text-sm font-extrabold">{items.length} items</p><p className="text-xs text-slate-400">listed on campus</p></div>
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-sm w-fit dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex -space-x-2"><div className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-800 bg-amber-100 dark:bg-amber-950/60" /><div className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-800 bg-sky-100 dark:bg-sky-950/60" /><div className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-800 bg-emerald-100 dark:bg-emerald-950/60" /></div>
+          <div><p className="text-sm font-extrabold text-slate-900 dark:text-white">{items.length} items</p><p className="text-xs text-slate-400 dark:text-slate-500">listed on campus</p></div>
         </div>
       </div>
       <div className="mb-7 flex flex-col gap-3.5 sm:gap-4">
         <div className="relative max-w-xl">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white py-3 sm:py-3.5 pl-11 sm:pl-12 pr-4 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" placeholder="Search for calculators, rackets, adapters..." />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white py-3 sm:py-3.5 pl-11 sm:pl-12 pr-4 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-sky-400" placeholder="Search for calculators, rackets, adapters..." />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
           {(['all', 'academics', 'electronics', 'sports', 'event_wear'] as const).map((cat) => (
-            <button key={cat} onClick={() => setCategory(cat)} className={`min-h-[38px] whitespace-nowrap rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold transition shrink-0 ${category === cat ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20' : 'border border-slate-200 bg-white text-slate-500 hover:border-sky-200 hover:text-sky-700'}`}>
+            <button key={cat} onClick={() => setCategory(cat)} className={`min-h-[38px] whitespace-nowrap rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold transition shrink-0 ${category === cat ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20' : 'border border-slate-200 bg-white text-slate-500 hover:border-sky-200 hover:text-sky-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-700 dark:hover:text-slate-200'}`}>
               {cat === 'all' ? 'All items' : categoryLabels[cat]}
             </button>
           ))}
         </div>
       </div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base sm:text-lg font-extrabold">Available near you</h2>
-        <span className="text-xs sm:text-sm font-semibold text-slate-400">{filtered.length} items</span>
+        <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Available near you</h2>
+        <span className="text-xs sm:text-sm font-semibold text-slate-400 dark:text-slate-500">{filtered.length} items</span>
       </div>
       {/* Grid — shows inline spinner while loading so the hero above is already visible */}
       {loading ? (
@@ -964,12 +970,12 @@ function ItemCard({
         </div>
       )}
 
-      <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/60 overflow-hidden">
+      <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/60 overflow-hidden dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:shadow-black/40">
         {/* Item image or category icon */}
         <div className="relative">
           {item.image_url ? (
             <div
-              className="h-44 sm:h-48 w-full bg-slate-100 flex items-center justify-center cursor-zoom-in"
+              className="h-44 sm:h-48 w-full bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center cursor-zoom-in"
               onClick={() => { setLightboxView(activeView); setLightboxOpen(true); }}
             >
               <img
@@ -983,8 +989,8 @@ function ItemCard({
               </div>
             </div>
           ) : (
-            <div className="flex h-44 sm:h-48 w-full items-center justify-center bg-slate-50">
-              {item.category === 'electronics' ? <Laptop size={36} className="text-sky-300" /> : item.category === 'academics' ? <BookOpen size={36} className="text-sky-300" /> : item.category === 'sports' ? <Compass size={36} className="text-sky-300" /> : <Sparkles size={36} className="text-sky-300" />}
+            <div className="flex h-44 sm:h-48 w-full items-center justify-center bg-slate-50 dark:bg-slate-800/50">
+              {item.category === 'electronics' ? <Laptop size={36} className="text-sky-300 dark:text-sky-500" /> : item.category === 'academics' ? <BookOpen size={36} className="text-sky-300 dark:text-sky-500" /> : item.category === 'sports' ? <Compass size={36} className="text-sky-300 dark:text-sky-500" /> : <Sparkles size={36} className="text-sky-300 dark:text-sky-500" />}
             </div>
           )}
 
@@ -1004,7 +1010,7 @@ function ItemCard({
           {/* Quantity Badge */}
           {typeof item.quantity === 'number' && item.quantity > 0 && (
             <div className="absolute top-3 right-3">
-              <span className="rounded-full bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm border border-slate-200/50">
+              <span className="rounded-full bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm border border-slate-200/50 dark:bg-slate-800/90 dark:text-slate-200 dark:border-slate-700">
                 {item.quantity} in stock
               </span>
             </div>
@@ -1027,42 +1033,42 @@ function ItemCard({
 
         <div className="flex flex-1 flex-col p-4 sm:p-5">
           <div className="mb-2 flex items-start justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-sky-600">{categoryLabels[item.category]}</p>
-            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{item.status}</span>
+            <p className="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">{categoryLabels[item.category]}</p>
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'}`}>{item.status}</span>
           </div>
 
-          <h3 className="text-base font-extrabold text-slate-900 line-clamp-1">{item.equipment_name}</h3>
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white line-clamp-1">{item.equipment_name}</h3>
 
           {/* Pricing display */}
           <div className="mt-2.5">
             {isSell ? (
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-black text-slate-900 flex items-center">
+                <span className="text-lg font-black text-slate-900 dark:text-white flex items-center">
                   <IndianRupee size={16} />{item.sale_price != null ? item.sale_price : (item.price_note || 'Negotiable')}
                 </span>
-                <span className="text-[11px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-bold text-violet-600 bg-violet-50 dark:bg-violet-950/60 dark:text-violet-300 px-2 py-0.5 rounded-full">
                   One-time purchase
                 </span>
               </div>
             ) : (
               <div className="flex flex-wrap items-center gap-1.5">
                 {item.rate_per_day != null && (
-                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-teal-50 border border-teal-100 px-2 py-0.5 text-xs font-bold text-teal-700">
-                    <IndianRupee size={11} />{item.rate_per_day}<span className="text-[10px] font-medium text-teal-600">/day</span>
+                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-teal-50 border border-teal-100 px-2 py-0.5 text-xs font-bold text-teal-700 dark:bg-teal-950/50 dark:border-teal-900 dark:text-teal-300">
+                    <IndianRupee size={11} />{item.rate_per_day}<span className="text-[10px] font-medium text-teal-600 dark:text-teal-400">/day</span>
                   </span>
                 )}
                 {item.rate_per_month != null && (
-                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-sky-50 border border-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700">
-                    <IndianRupee size={11} />{item.rate_per_month}<span className="text-[10px] font-medium text-sky-600">/mo</span>
+                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-sky-50 border border-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700 dark:bg-sky-950/50 dark:border-sky-900 dark:text-sky-300">
+                    <IndianRupee size={11} />{item.rate_per_month}<span className="text-[10px] font-medium text-sky-600 dark:text-sky-400">/mo</span>
                   </span>
                 )}
                 {item.rate_per_semester != null && (
-                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-indigo-50 border border-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">
-                    <IndianRupee size={11} />{item.rate_per_semester}<span className="text-[10px] font-medium text-indigo-600">/sem</span>
+                  <span className="inline-flex items-center gap-0.5 rounded-lg bg-indigo-50 border border-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/50 dark:border-indigo-900 dark:text-indigo-300">
+                    <IndianRupee size={11} />{item.rate_per_semester}<span className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400">/sem</span>
                   </span>
                 )}
                 {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
-                  <div className="flex items-center gap-1 text-xs font-semibold text-amber-600">
+                  <div className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
                     <IndianRupee size={12} />
                     <span className="truncate">{item.price_note}</span>
                   </div>
@@ -1071,19 +1077,19 @@ function ItemCard({
             )}
           </div>
 
-          <p className="mt-3 flex-1 text-xs sm:text-sm text-slate-500">
-            Listed by <span className="font-bold text-slate-700">{item.owner.full_name}</span> · Room {item.owner.room_number}
+          <p className="mt-3 flex-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Listed by <span className="font-bold text-slate-700 dark:text-slate-200">{item.owner.full_name}</span> · Room {item.owner.room_number}
           </p>
 
           <div className="mt-4">
             {isOwn ? (
-              <div className="w-full rounded-xl bg-slate-50 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-400">Your listing</div>
+              <div className="w-full rounded-xl bg-slate-50 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-400 dark:bg-slate-800 dark:text-slate-500">Your listing</div>
             ) : requestStatus === 'pending' ? (
               <div className="flex gap-2">
-                <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-2.5 text-xs sm:text-sm font-bold text-amber-600">Request sent</div>
+                <div className="flex flex-1 items-center justify-center rounded-xl bg-amber-50 py-2.5 text-xs sm:text-sm font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">Request sent</div>
                 <button
                   onClick={() => onCancelRequest(item)}
-                  className="flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
+                  className="flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-500 transition hover:bg-rose-50 dark:border-rose-900/60 dark:bg-slate-800 dark:text-rose-400 dark:hover:bg-rose-950/40"
                   title="Cancel request"
                 >
                   <XCircle size={15} /> Cancel
@@ -1093,8 +1099,8 @@ function ItemCard({
               <button
                 disabled={item.status !== 'available' || requestStatus === 'approved'}
                 onClick={() => onRequest(item)}
-                className={`min-h-[44px] w-full rounded-xl py-2.5 px-4 text-xs sm:text-sm font-extrabold text-white transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${
-                  isSell ? 'bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-600/15' : 'bg-slate-900 hover:bg-sky-600'
+                className={`min-h-[44px] w-full rounded-xl py-2.5 px-4 text-xs sm:text-sm font-extrabold text-white transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600 ${
+                  isSell ? 'bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-600/15' : 'bg-slate-900 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500'
                 }`}
               >
                 {item.status !== 'available'
@@ -1133,8 +1139,8 @@ function SingleSlotUploader({
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
 
-  const accentBorder = accentColor === 'amber' ? 'border-amber-400 bg-amber-50' : 'border-sky-400 bg-sky-50';
-  const accentHover = accentColor === 'amber' ? 'hover:border-amber-300 hover:bg-amber-50/50' : 'hover:border-sky-300 hover:bg-sky-50/50';
+  const accentBorder = accentColor === 'amber' ? 'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/30' : 'border-sky-400 bg-sky-50 dark:border-sky-500 dark:bg-sky-950/30';
+  const accentHover = accentColor === 'amber' ? 'hover:border-amber-300 hover:bg-amber-50/50 dark:hover:border-amber-600 dark:hover:bg-amber-950/20' : 'hover:border-sky-300 hover:bg-sky-50/50 dark:hover:border-sky-600 dark:hover:bg-sky-950/20';
   const accentIcon = accentColor === 'amber' ? 'text-amber-500' : 'text-sky-500';
   const accentSpinner = accentColor === 'amber' ? 'text-amber-500' : 'text-sky-500';
 
@@ -1176,23 +1182,23 @@ function SingleSlotUploader({
   return (
     <div className="flex-1 min-w-0">
       <div className="mb-1.5 flex items-center gap-1.5">
-        <span className="text-xs font-extrabold text-slate-700">{label} <span className="text-rose-500">*</span></span>
-        <span className="text-[11px] text-slate-400">{sublabel}</span>
+        <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{label} <span className="text-rose-500">*</span></span>
+        <span className="text-[11px] text-slate-400 dark:text-slate-500">{sublabel}</span>
       </div>
       {preview ? (
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200">
-          <img src={preview} alt={label} className="h-40 w-full object-contain bg-slate-50 p-1" />
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+          <img src={preview} alt={label} className="h-40 w-full object-contain bg-slate-50 dark:bg-slate-900/60 p-1" />
           {uploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-slate-900/80">
               <LoaderCircle size={24} className={`animate-spin ${accentSpinner}`} />
-              <span className="ml-2 text-xs font-semibold text-slate-600">Uploading…</span>
+              <span className="ml-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Uploading…</span>
             </div>
           )}
           {!uploading && (
             <button
               type="button"
               onClick={() => { setPreview(null); onUploaded(''); if (inputRef.current) inputRef.current.value = ''; }}
-              className="absolute right-2 top-2 flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-xs font-bold text-slate-600 shadow hover:bg-white"
+              className="absolute right-2 top-2 flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-xs font-bold text-slate-600 shadow hover:bg-white dark:bg-slate-800/90 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               <X size={12} /> Change
             </button>
@@ -1204,14 +1210,14 @@ function SingleSlotUploader({
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           onClick={() => inputRef.current?.click()}
-          className={`flex h-40 cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed transition ${dragOver ? accentBorder : `border-slate-200 bg-slate-50 ${accentHover}`}`}
+          className={`flex h-40 cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed transition ${dragOver ? accentBorder : `border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/40 ${accentHover}`}`}
         >
-          <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ${accentIcon}`}>
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-slate-800 ${accentIcon}`}>
             <Upload size={20} />
           </div>
           <div className="text-center px-2">
-            <p className="text-xs font-bold text-slate-700">Drop here or <span className={accentColor === 'amber' ? 'text-amber-600' : 'text-sky-600'}>browse</span></p>
-            <p className="mt-0.5 text-[10px] text-slate-400">JPEG, PNG, WebP · max 5 MB</p>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Drop here or <span className={accentColor === 'amber' ? 'text-amber-600 dark:text-amber-400' : 'text-sky-600 dark:text-sky-400'}>browse</span></p>
+            <p className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">JPEG, PNG, WebP · max 5 MB</p>
           </div>
         </div>
       )}
@@ -1234,13 +1240,13 @@ function DualImageUploader({
   return (
     <div className="space-y-4">
       {/* ⚠️ Legitimacy Warning Banner */}
-      <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+      <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
         <div className="shrink-0 mt-0.5">
-          <AlertTriangle size={18} className="text-amber-600" />
+          <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-extrabold text-amber-800 mb-1">Upload genuine photos of your actual item</p>
-          <ul className="space-y-0.5 text-[11px] text-amber-700 leading-relaxed">
+          <p className="text-xs font-extrabold text-amber-800 dark:text-amber-300 mb-1">Upload genuine photos of your actual item</p>
+          <ul className="space-y-0.5 text-[11px] text-amber-700 dark:text-amber-400/90 leading-relaxed">
             <li>• Take real photos yourself — do <strong>not</strong> use stock images or brand catalogue photos.</li>
             <li>• Both <strong>front</strong> and <strong>back</strong> views are required so borrowers can inspect wear, ports, labels, or any damage.</li>
             <li>• Listings with misleading or downloaded images will be removed.</li>
@@ -1346,9 +1352,9 @@ function MyListingCard({
         </div>
       )}
 
-      <div className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md hover:border-slate-300">
+      <div className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
         <div
-          className="relative h-44 bg-slate-100 flex items-center justify-center overflow-hidden cursor-zoom-in"
+          className="relative h-44 bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center overflow-hidden cursor-zoom-in"
           onClick={() => setLightboxOpen(true)}
         >
           {item.image_url ? (
@@ -1358,7 +1364,7 @@ function MyListingCard({
               className="max-h-full w-full object-contain p-2 transition hover:scale-[1.02]"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-slate-50 text-slate-300">
+            <div className="flex h-full w-full items-center justify-center bg-slate-50 dark:bg-slate-800/60 text-slate-300 dark:text-slate-600">
               <Image size={28} />
             </div>
           )}
@@ -1384,7 +1390,7 @@ function MyListingCard({
           </div>
 
           <div className="absolute top-2.5 right-2.5">
-            <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-extrabold text-slate-700 shadow-sm border border-slate-200">
+            <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-extrabold text-slate-700 shadow-sm border border-slate-200 dark:bg-slate-800/90 dark:text-slate-200 dark:border-slate-700">
               {item.quantity || 1} in stock
             </span>
           </div>
@@ -1409,50 +1415,50 @@ function MyListingCard({
         <div className="flex flex-1 flex-col p-4 justify-between">
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] font-bold text-sky-600 uppercase tracking-wide">
+              <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wide">
                 {categoryLabels[item.category]}
               </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
-                  item.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                  item.status === 'available' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                 }`}
               >
                 {item.status}
               </span>
             </div>
-            <h3 className="font-extrabold text-slate-900 text-sm sm:text-base line-clamp-1">
+            <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base line-clamp-1">
               {item.equipment_name}
             </h3>
 
             {/* Pricing summary */}
             <div className="mt-2">
               {isSell ? (
-                <div className="flex items-center gap-1 text-slate-900 font-extrabold text-sm">
+                <div className="flex items-center gap-1 text-slate-900 dark:text-white font-extrabold text-sm">
                   <IndianRupee size={13} />
                   {item.sale_price != null ? item.sale_price : (item.price_note || 'Negotiable')}
-                  <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-full ml-1">
+                  <span className="text-[10px] font-bold text-violet-600 bg-violet-50 dark:bg-violet-950/60 dark:text-violet-300 px-1.5 py-0.5 rounded-full ml-1">
                     Sale
                   </span>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-1 text-[11px]">
                   {item.rate_per_day != null && (
-                    <span className="rounded bg-teal-50 border border-teal-100 px-1.5 py-0.5 text-teal-700 font-bold">
+                    <span className="rounded bg-teal-50 border border-teal-100 px-1.5 py-0.5 text-teal-700 font-bold dark:bg-teal-950/50 dark:border-teal-900 dark:text-teal-300">
                       ₹{item.rate_per_day}/day
                     </span>
                   )}
                   {item.rate_per_month != null && (
-                    <span className="rounded bg-sky-50 border border-sky-100 px-1.5 py-0.5 text-sky-700 font-bold">
+                    <span className="rounded bg-sky-50 border border-sky-100 px-1.5 py-0.5 text-sky-700 font-bold dark:bg-sky-950/50 dark:border-sky-900 dark:text-sky-300">
                       ₹{item.rate_per_month}/mo
                     </span>
                   )}
                   {item.rate_per_semester != null && (
-                    <span className="rounded bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 text-indigo-700 font-bold">
+                    <span className="rounded bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 text-indigo-700 font-bold dark:bg-indigo-950/50 dark:border-indigo-900 dark:text-indigo-300">
                       ₹{item.rate_per_semester}/sem
                     </span>
                   )}
                   {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
-                    <span className="text-amber-600 font-semibold truncate flex items-center">
+                    <span className="text-amber-600 dark:text-amber-400 font-semibold truncate flex items-center">
                       <IndianRupee size={11} /> {item.price_note}
                     </span>
                   )}
@@ -1461,10 +1467,10 @@ function MyListingCard({
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
             <button
               onClick={() => onDelete(item.equipment_id)}
-              className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-rose-600 py-1 px-2 rounded-lg hover:bg-rose-50 transition"
+              className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-rose-600 py-1 px-2 rounded-lg hover:bg-rose-50 dark:text-slate-500 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition"
               title="Remove listing"
             >
               <Trash2 size={14} /> Remove Listing
@@ -1671,22 +1677,22 @@ function AddItem({
       {/* Top Navigation & Hero Banner */}
       <button
         onClick={onDone}
-        className="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-sky-600 hover:bg-slate-50"
+        className="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-sky-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:text-sky-400 dark:hover:bg-slate-800"
       >
         <ChevronLeft size={16} /> Back to explore
       </button>
 
-      <div className="mb-8 rounded-3xl bg-gradient-to-br from-sky-50 via-white to-indigo-50/40 p-6 sm:p-8 border border-sky-100/70 shadow-sm">
+      <div className="mb-8 rounded-3xl bg-gradient-to-br from-sky-50 via-white to-indigo-50/40 p-6 sm:p-8 border border-sky-100/70 shadow-sm dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-850 dark:border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-sky-100/80 px-3 py-1 text-xs font-extrabold text-sky-800 mb-2.5">
-              <Sparkles size={13} className="text-sky-600" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-sky-100/80 px-3 py-1 text-xs font-extrabold text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 mb-2.5">
+              <Sparkles size={13} className="text-sky-600 dark:text-sky-400" />
               Campus Sharing & Marketplace
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
               Share or Sell an Item
             </h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-xl">
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl">
               Turn unused equipment into campus goodwill or extra pocket money. Choose whether you are selling permanently or lending for a period.
             </p>
           </div>
@@ -1701,20 +1707,20 @@ function AddItem({
         {/* ── LEFT COLUMN: Basic Item Info & Photo ─────────────────── */}
         <div className="lg:col-span-7 space-y-6">
           {/* Card: Item Details */}
-          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm">
-            <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
                 <BookOpen size={16} />
               </div>
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">1. Item Information</h2>
-                <p className="text-xs text-slate-400">Describe the gear you are offering</p>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">1. Item Information</h2>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Describe the gear you are offering</p>
               </div>
             </div>
 
             <div className="space-y-5">
               <div>
-                <label className="mb-2 block text-xs sm:text-sm font-bold text-slate-700">
+                <label className="mb-2 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
                   What are you listing? <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -1722,14 +1728,14 @@ function AddItem({
                   placeholder="e.g. Mini Drafter, Casio FX-991EX, Lab Coat, Football..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
                   required
                 />
               </div>
 
               {/* Category Selector Buttons */}
               <div>
-                <label className="mb-2 block text-xs sm:text-sm font-bold text-slate-700">
+                <label className="mb-2 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
                   Category <span className="text-rose-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -1750,11 +1756,11 @@ function AddItem({
                         onClick={() => setCategory(cat.id)}
                         className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3 border text-center transition ${
                           isSelected
-                            ? 'border-sky-500 bg-sky-50/80 text-sky-700 shadow-sm ring-2 ring-sky-500/20'
-                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                            ? 'border-sky-500 bg-sky-50/80 text-sky-700 shadow-sm ring-2 ring-sky-500/20 dark:bg-sky-950/70 dark:text-sky-300 dark:border-sky-500'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
                         }`}
                       >
-                        <Icon size={18} className={isSelected ? 'text-sky-600' : 'text-slate-400'} />
+                        <Icon size={18} className={isSelected ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-500'} />
                         <span className="text-xs font-bold">{cat.label}</span>
                       </button>
                     );
@@ -1765,17 +1771,17 @@ function AddItem({
               {/* Quantity Stepper */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs sm:text-sm font-bold text-slate-700">
+                  <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
                     Quantity Available
                   </label>
-                  <span className="text-xs text-slate-400">Total units on hand</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">Total units on hand</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+                  <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 dark:border-slate-700 dark:bg-slate-800/80">
                     <button
                       type="button"
                       onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                     >
                       <Minus size={15} />
                     </button>
@@ -1784,17 +1790,17 @@ function AddItem({
                       min={1}
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-14 bg-transparent text-center text-sm font-extrabold text-slate-900 outline-none"
+                      className="w-14 bg-transparent text-center text-sm font-extrabold text-slate-900 dark:text-white outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setQuantity((prev) => prev + 1)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                     >
                       <Plus size={15} />
                     </button>
                   </div>
-                  <span className="text-xs font-medium text-slate-500">
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                     {quantity === 1 ? '1 student can borrow or buy' : `${quantity} students can borrow or buy`}
                   </span>
                 </div>
@@ -1803,14 +1809,14 @@ function AddItem({
           </div>
 
           {/* Card: Item Photos (Front + Back) */}
-          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm">
-            <div className="mb-4 flex items-center gap-2.5 border-b border-slate-100 pb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-4 flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
                 <Image size={16} />
               </div>
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">2. Item Photos</h2>
-                <p className="text-xs text-slate-400">Front & back required — help peers inspect condition</p>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">2. Item Photos</h2>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Front & back required — help peers inspect condition</p>
               </div>
             </div>
             <DualImageUploader
@@ -1825,14 +1831,14 @@ function AddItem({
         {/* ── RIGHT COLUMN: Listing Type, Pricing & Live Preview ───── */}
         <div className="lg:col-span-5 space-y-6">
           {/* Card: Listing Type & Pricing */}
-          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm">
-            <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
                 <Tag size={16} />
               </div>
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">3. Transaction Type & Pricing</h2>
-                <p className="text-xs text-slate-400">Choose between lending or selling</p>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">3. Transaction Type & Pricing</h2>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Choose between lending or selling</p>
               </div>
             </div>
 
@@ -1843,15 +1849,15 @@ function AddItem({
                 onClick={() => setListingType('rent')}
                 className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 border text-center transition ${
                   listingType === 'rent'
-                    ? 'border-teal-500 bg-teal-50/60 text-teal-900 shadow-sm ring-2 ring-teal-500/20'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    ? 'border-teal-500 bg-teal-50/60 text-teal-900 shadow-sm ring-2 ring-teal-500/20 dark:bg-teal-950/40 dark:text-teal-200'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
                 }`}
               >
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${listingType === 'rent' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${listingType === 'rent' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
                   <Clock size={20} />
                 </div>
                 <span className="text-sm font-extrabold">Lend / Rent</span>
-                <span className="text-[11px] text-slate-500">For a fixed duration</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">For a fixed duration</span>
               </button>
 
               <button
@@ -1859,27 +1865,27 @@ function AddItem({
                 onClick={() => setListingType('sell')}
                 className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 border text-center transition ${
                   listingType === 'sell'
-                    ? 'border-violet-500 bg-violet-50/60 text-violet-900 shadow-sm ring-2 ring-violet-500/20'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    ? 'border-violet-500 bg-violet-50/60 text-violet-900 shadow-sm ring-2 ring-violet-500/20 dark:bg-violet-950/40 dark:text-violet-200'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
                 }`}
               >
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${listingType === 'sell' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${listingType === 'sell' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
                   <ShoppingBag size={20} />
                 </div>
                 <span className="text-sm font-extrabold">Sell Item</span>
-                <span className="text-[11px] text-slate-500">One-time purchase</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">One-time purchase</span>
               </button>
             </div>
 
             {/* Conditional Pricing Section: SELL */}
             {listingType === 'sell' && (
-              <div className="space-y-4 rounded-2xl bg-violet-50/40 p-4 border border-violet-100">
+              <div className="space-y-4 rounded-2xl bg-violet-50/40 p-4 border border-violet-100 dark:bg-violet-950/20 dark:border-violet-900/50">
                 <div>
-                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">
+                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
                     Selling Price <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <IndianRupee size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <IndianRupee size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <input
                       type="number"
                       min={0}
@@ -1887,24 +1893,24 @@ function AddItem({
                       placeholder="e.g. 550"
                       value={salePrice}
                       onChange={(e) => setSalePrice(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-14 text-base sm:text-sm font-bold outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-14 text-base sm:text-sm font-bold outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white"
                       required
                     />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">INR</span>
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400 dark:text-slate-500">INR</span>
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-500">Full ownership transfers upon sale.</p>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Full ownership transfers upon sale.</p>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold text-slate-700">
-                    Condition / Notes <span className="text-xs font-normal text-slate-400">(optional)</span>
+                  <label className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Condition / Notes <span className="text-xs font-normal text-slate-400 dark:text-slate-500">(optional)</span>
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. In mint condition, used for 1 semester only"
                     value={priceNote}
                     onChange={(e) => setPriceNote(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-medium outline-none placeholder:text-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-medium outline-none placeholder:text-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -1912,23 +1918,23 @@ function AddItem({
 
             {/* Conditional Pricing Section: LEND / RENT */}
             {listingType === 'rent' && (
-              <div className="space-y-4 rounded-2xl bg-teal-50/40 p-4 border border-teal-100">
+              <div className="space-y-4 rounded-2xl bg-teal-50/40 p-4 border border-teal-100 dark:bg-teal-950/20 dark:border-teal-900/50">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs sm:text-sm font-bold text-slate-700">Rental Rates</label>
-                  <span className="text-[11px] text-slate-500 font-medium">Enter any or all rates</span>
+                  <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Rental Rates</label>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Enter any or all rates</span>
                 </div>
 
                 <div className="space-y-3">
                   {/* Per Day */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-teal-900 flex items-center gap-1">
-                        <Clock size={12} className="text-teal-600" /> Daily Rate
+                      <span className="text-xs font-bold text-teal-900 dark:text-teal-300 flex items-center gap-1">
+                        <Clock size={12} className="text-teal-600 dark:text-teal-400" /> Daily Rate
                       </span>
-                      <span className="text-[11px] text-slate-400">Short-term loan</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Short-term loan</span>
                     </div>
                     <div className="relative">
-                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                       <input
                         type="number"
                         min={0}
@@ -1936,22 +1942,22 @@ function AddItem({
                         placeholder="e.g. 20"
                         value={rateDay}
                         onChange={(e) => setRateDay(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">/ day</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500">/ day</span>
                     </div>
                   </div>
 
                   {/* Per Month */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-sky-900 flex items-center gap-1">
-                        <Calendar size={12} className="text-sky-600" /> Monthly Rate
+                      <span className="text-xs font-bold text-sky-900 dark:text-sky-300 flex items-center gap-1">
+                        <Calendar size={12} className="text-sky-600 dark:text-sky-400" /> Monthly Rate
                       </span>
-                      <span className="text-[11px] text-slate-400">Mid-term project</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Mid-term project</span>
                     </div>
                     <div className="relative">
-                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                       <input
                         type="number"
                         min={0}
@@ -1959,22 +1965,22 @@ function AddItem({
                         placeholder="e.g. 250"
                         value={rateMonth}
                         onChange={(e) => setRateMonth(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">/ mo</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500">/ mo</span>
                     </div>
                   </div>
 
                   {/* Per Semester */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-indigo-900 flex items-center gap-1">
-                        <GraduationCap size={13} className="text-indigo-600" /> Semester Rate
+                      <span className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1">
+                        <GraduationCap size={13} className="text-indigo-600 dark:text-indigo-400" /> Semester Rate
                       </span>
-                      <span className="text-[11px] text-slate-400">Full term course</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Full term course</span>
                     </div>
                     <div className="relative">
-                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                       <input
                         type="number"
                         min={0}
@@ -1982,23 +1988,23 @@ function AddItem({
                         placeholder="e.g. 600"
                         value={rateSemester}
                         onChange={(e) => setRateSemester(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-14 text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">/ sem</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500">/ sem</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold text-slate-700">
-                    Lending Terms / Deposit <span className="text-xs font-normal text-slate-400">(optional)</span>
+                  <label className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Lending Terms / Deposit <span className="text-xs font-normal text-slate-400 dark:text-slate-500">(optional)</span>
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Free for 2 days, ₹50 refundable deposit"
                     value={priceNote}
                     onChange={(e) => setPriceNote(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-medium outline-none placeholder:text-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-medium outline-none placeholder:text-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -2006,17 +2012,17 @@ function AddItem({
           </div>
 
           {/* Card: Live Feed Preview */}
-          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm">
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-3 flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 <Eye size={13} className="text-sky-500" /> Live Explore Preview
               </span>
-              <span className="text-[11px] font-semibold text-slate-400">Preview as peers see it</span>
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">Preview as peers see it</span>
             </div>
 
             {/* Mock Item Card Preview */}
-            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
-              <div className="relative h-44 bg-slate-100 flex items-center justify-center overflow-hidden">
+            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
+              <div className="relative h-44 bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center overflow-hidden">
                 {activePreviewImg ? (
                   <img
                     src={activePreviewImg}
@@ -2024,7 +2030,7 @@ function AddItem({
                     className="max-h-full w-full object-contain p-2"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-slate-300">
+                  <div className="flex h-full w-full items-center justify-center text-slate-300 dark:text-slate-600">
                     {category === 'electronics' ? <Laptop size={32} /> : category === 'academics' ? <BookOpen size={32} /> : category === 'sports' ? <Compass size={32} /> : <Sparkles size={32} />}
                   </div>
                 )}
@@ -2061,7 +2067,7 @@ function AddItem({
                   )}
                 </div>
                 <div className="absolute top-2.5 right-2.5">
-                  <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-slate-700 shadow-sm border border-slate-200">
+                  <span className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-slate-700 shadow-sm border border-slate-200 dark:bg-slate-800/90 dark:text-slate-200 dark:border-slate-700">
                     {quantity} in stock
                   </span>
                 </div>
@@ -2069,24 +2075,24 @@ function AddItem({
 
               <div className="p-3.5 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-sky-600 uppercase tracking-wide text-[10px]">{categoryLabels[category]}</span>
-                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">Available</span>
+                  <span className="font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wide text-[10px]">{categoryLabels[category]}</span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">Available</span>
                 </div>
-                <p className="font-extrabold text-slate-900 text-sm truncate">{name.trim() || 'Item Name'}</p>
+                <p className="font-extrabold text-slate-900 dark:text-white text-sm truncate">{name.trim() || 'Item Name'}</p>
 
                 <div className="pt-1">
                   {listingType === 'sell' ? (
-                    <div className="flex items-center gap-1 text-slate-900 font-extrabold text-sm">
+                    <div className="flex items-center gap-1 text-slate-900 dark:text-white font-extrabold text-sm">
                       <IndianRupee size={13} />{salePrice || '—'}
-                      <span className="text-[10px] font-medium text-slate-400 ml-1">Buy now</span>
+                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 ml-1">Buy now</span>
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-1 text-[11px]">
-                      {rateDay && <span className="rounded bg-teal-50 px-1.5 py-0.5 text-teal-700 font-bold">₹{rateDay}/day</span>}
-                      {rateMonth && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700 font-bold">₹{rateMonth}/mo</span>}
-                      {rateSemester && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 font-bold">₹{rateSemester}/sem</span>}
+                      {rateDay && <span className="rounded bg-teal-50 px-1.5 py-0.5 text-teal-700 font-bold dark:bg-teal-950/50 dark:text-teal-300">₹{rateDay}/day</span>}
+                      {rateMonth && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700 font-bold dark:bg-sky-950/50 dark:text-sky-300">₹{rateMonth}/mo</span>}
+                      {rateSemester && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 font-bold dark:bg-indigo-950/50 dark:text-indigo-300">₹{rateSemester}/sem</span>}
                       {!rateDay && !rateMonth && !rateSemester && (
-                        <span className="text-slate-400 text-xs italic">Set rental rates above</span>
+                        <span className="text-slate-400 dark:text-slate-500 text-xs italic">Set rental rates above</span>
                       )}
                     </div>
                   )}
@@ -2097,7 +2103,7 @@ function AddItem({
 
           {/* Submission and Error area */}
           {error && (
-            <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-xs sm:text-sm font-semibold text-rose-600">
+            <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-xs sm:text-sm font-semibold text-rose-600 dark:bg-rose-950/40 dark:border-rose-900/60 dark:text-rose-400">
               {error}
             </div>
           )}
@@ -2115,14 +2121,14 @@ function AddItem({
       </form>
 
       {/* ── My Listings Section (Wide Grid) ────────────────────────── */}
-      <div className="mt-16 border-t border-slate-200/80 pt-10">
+      <div className="mt-16 border-t border-slate-200/80 dark:border-slate-800 pt-10">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Your Listings</h2>
-            <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Items and equipment you have published on campus</p>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Your Listings</h2>
+            <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Items and equipment you have published on campus</p>
           </div>
           {myItems.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-100 px-3 py-1 text-xs font-extrabold text-sky-700 self-start sm:self-auto">
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-100 px-3 py-1 text-xs font-extrabold text-sky-700 dark:bg-sky-950/60 dark:border-sky-900 dark:text-sky-300 self-start sm:self-auto">
               <CheckCircle2 size={13} className="text-sky-500" />
               {myItems.length} active listing{myItems.length !== 1 ? 's' : ''}
             </span>
@@ -2192,31 +2198,31 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
   return (
     <div>
       <div className="mb-6 sm:mb-8">
-        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-bold text-sky-600">Your activity</p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Dashboard</h1>
-        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500">Keep track of your lending and borrowing.</p>
+        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-bold text-sky-600 dark:text-sky-400">Your activity</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Dashboard</h1>
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Keep track of your lending and borrowing.</p>
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Outgoing requests */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-5 sm:mb-6">
-            <h2 className="text-base sm:text-lg font-extrabold">My requests</h2>
-            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500">Items you asked to borrow</p>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">My requests</h2>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Items you asked to borrow</p>
           </div>
           {outgoing.length ? (
             <div className="space-y-3">
               {outgoing.map((request) => (
-                <div key={request.request_id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                <div key={request.request_id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3.5 sm:p-4 dark:bg-slate-800/60">
                   <div className="min-w-0">
-                    <h3 className="truncate text-sm font-extrabold">{request.equipment.equipment_name}</h3>
-                    <p className="mt-0.5 text-xs text-slate-500">Owner: {request.owner.full_name}</p>
+                    <h3 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">{request.equipment.equipment_name}</h3>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Owner: {request.owner.full_name}</p>
                   </div>
-                  <div className="flex shrink-0 items-center justify-between sm:justify-end gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60">
+                  <div className="flex shrink-0 items-center justify-between sm:justify-end gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60 dark:border-slate-700/60">
                     <StatusBadge status={request.status} />
                     {request.status === 'pending' && (
                       <button
                         onClick={() => handleCancelOutgoing(request.request_id)}
-                        className="flex min-h-[36px] items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-bold text-rose-500 transition hover:bg-rose-50"
+                        className="flex min-h-[36px] items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-bold text-rose-500 transition hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40"
                       >
                         <XCircle size={13} /> Cancel
                       </button>
@@ -2231,29 +2237,29 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
         </div>
 
         {/* Incoming requests */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-5 sm:mb-6">
-            <h2 className="text-base sm:text-lg font-extrabold">Requests for my items</h2>
-            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500">People waiting for your approval</p>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Requests for my items</h2>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">People waiting for your approval</p>
           </div>
           {incoming.length ? (
             <div className="space-y-3">
               {incoming.map((request) => (
-                <div key={request.request_id} className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
+                <div key={request.request_id} className="rounded-2xl bg-slate-50 p-3.5 sm:p-4 dark:bg-slate-800/60">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="text-sm font-extrabold truncate">{request.equipment.equipment_name}</h3>
-                      <p className="mt-0.5 text-xs text-slate-500">{request.borrower.full_name} · Room {request.borrower.room_number}</p>
+                      <h3 className="text-sm font-extrabold truncate text-slate-900 dark:text-white">{request.equipment.equipment_name}</h3>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{request.borrower.full_name} · Room {request.borrower.room_number}</p>
                       {request.borrower.phone_number && (
-                        <p className="mt-0.5 text-xs text-slate-400">📞 {request.borrower.phone_number}</p>
+                        <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">📞 {request.borrower.phone_number}</p>
                       )}
                     </div>
                     <StatusBadge status={request.status} />
                   </div>
                   {request.status === 'pending' && (
                     <div className="mt-3.5 flex gap-2">
-                      <button onClick={() => handleUpdate(request.request_id, 'approved')} className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 py-2 text-xs font-extrabold text-white hover:bg-emerald-600"><Check size={14} />Approve</button>
-                      <button onClick={() => handleUpdate(request.request_id, 'rejected')} className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2 text-xs font-extrabold text-slate-500 hover:border-rose-200 hover:text-rose-600"><XCircle size={14} />Decline</button>
+                      <button onClick={() => handleUpdate(request.request_id, 'approved')} className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 py-2 text-xs font-extrabold text-white hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500"><Check size={14} />Approve</button>
+                      <button onClick={() => handleUpdate(request.request_id, 'rejected')} className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2 text-xs font-extrabold text-slate-500 hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-900 dark:hover:text-rose-400"><XCircle size={14} />Decline</button>
                     </div>
                   )}
                 </div>
@@ -2344,32 +2350,32 @@ function ProfilePage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6 sm:mb-8">
-        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-bold text-sky-600">Your account</p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Profile</h1>
-        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500">Keep your details up to date for easy handoffs.</p>
+        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-bold text-sky-600 dark:text-sky-400">Your account</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Profile</h1>
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Keep your details up to date for easy handoffs.</p>
       </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
-          <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-sky-100 text-lg sm:text-xl font-extrabold text-sky-700 shrink-0">
+          <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-sky-100 text-lg sm:text-xl font-extrabold text-sky-700 dark:bg-sky-950 dark:text-sky-300 shrink-0">
             {getInitials(fullName)}
           </div>
           <div>
             <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
-              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">{fullName || 'Your name'}</h2>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-700 border border-emerald-200">
+              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">{fullName || 'Your name'}</h2>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60">
                 PEC Verified
               </span>
             </div>
-            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500 font-medium">
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
               {degree} {branch} • Batch of {batchYear}
             </p>
-            {userEmail && <p className="text-xs text-slate-400 mt-0.5">{userEmail}</p>}
+            {userEmail && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{userEmail}</p>}
           </div>
         </div>
 
         {error && (
-          <div className="mb-5 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600">
+          <div className="mb-5 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600 dark:bg-rose-950/40 dark:border dark:border-rose-900/60 dark:text-rose-400">
             {error}
           </div>
         )}
@@ -2379,8 +2385,8 @@ function ProfilePage({
 
           <div>
             <div className="flex justify-between items-center mb-1.5 sm:mb-2">
-              <label className="text-xs sm:text-sm font-bold text-slate-700">Student ID (SID)</label>
-              <span className={`text-xs ${studentId.length === 8 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+              <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Student ID (SID)</label>
+              <span className={`text-xs ${studentId.length === 8 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-400 dark:text-slate-500'}`}>
                 {studentId.length}/8 digits
               </span>
             </div>
@@ -2390,30 +2396,30 @@ function ProfilePage({
               value={studentId}
               maxLength={8}
               onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 8))}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Phone number</label>
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Phone number</label>
             <input
               type="tel"
               placeholder="+91 98765 43210"
               value={phone}
               maxLength={10}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">Campus Residence</label>
-            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 mb-3">
+            <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Campus Residence</label>
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 p-1 mb-3">
               <button
                 type="button"
                 onClick={() => setResidenceType('hosteller')}
                 className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
-                  residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                  residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <Building2 size={15} />
@@ -2423,7 +2429,7 @@ function ProfilePage({
                 type="button"
                 onClick={() => setResidenceType('day_scholar')}
                 className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
-                  residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                  residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <MapPin size={15} />
@@ -2434,11 +2440,11 @@ function ProfilePage({
             {residenceType === 'hosteller' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">PEC Hostel</label>
+                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">PEC Hostel</label>
                   <select
                     value={hostel}
                     onChange={(e) => setHostel(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base sm:text-sm font-medium outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base sm:text-sm font-medium outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white"
                   >
                     <option value="">Select hostel...</option>
                     {PEC_HOSTELS.map((h) => (
@@ -2449,25 +2455,25 @@ function ProfilePage({
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Room number</label>
+                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label>
                   <input
                     type="text"
                     placeholder="e.g. 204-B"
                     value={room}
                     onChange={(e) => setRoom(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
             ) : (
               <div>
-                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700">Locality / Address</label>
+                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Locality / Address</label>
                 <input
                   type="text"
                   placeholder="e.g. Sector 15-D, Chandigarh"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
                 />
               </div>
             )}
@@ -2484,7 +2490,7 @@ function ProfilePage({
         </button>
       </div>
 
-      <div className="mt-5 flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-xs sm:text-sm text-emerald-700">
+      <div className="mt-5 flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-xs sm:text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-400">
         <ShieldCheck size={20} className="shrink-0" />
         <p>
           <span className="font-extrabold">Your details are verified by PEC domain.</span> Only your name and room/location are shown when you list an item to peers.
@@ -2497,15 +2503,27 @@ function ProfilePage({
 // ── Shared bits ────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: RequestStatus }) {
-  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${status === 'approved' ? 'bg-emerald-50 text-emerald-600' : status === 'rejected' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>{status}</span>;
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${
+        status === 'approved'
+          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
+          : status === 'rejected'
+          ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
+          : 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400'
+      }`}
+    >
+      {status}
+    </span>
+  );
 }
 
 function Empty({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-4 sm:px-6 py-10 sm:py-12 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-400">{icon}</div>
-      <h3 className="text-sm font-extrabold">{title}</h3>
-      <p className="mt-1 text-xs sm:text-sm text-slate-400">{text}</p>
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-10 sm:py-12 text-center">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-400 dark:bg-slate-800 dark:text-slate-500">{icon}</div>
+      <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">{title}</h3>
+      <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">{text}</p>
     </div>
   );
 }
@@ -2513,8 +2531,15 @@ function Empty({ icon, title, text }: { icon: ReactNode; title: string; text: st
 function Field({ label, type = 'text', placeholder, value, onChange, required }: { label: string; type?: string; placeholder?: string; value?: string; onChange?: (event: ChangeEvent<HTMLInputElement>) => void; required?: boolean }) {
   return (
     <div>
-      <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700">{label}</label>
-      <input type={type} placeholder={placeholder} value={value} onChange={onChange} required={required} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10" />
+      <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">{label}</label>
+      <input
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
+      />
     </div>
   );
 }

@@ -20,6 +20,19 @@
     <meta property="og:title" content="CampusLend · Campus equipment sharing">
     <meta property="og:description" content="Borrow what you need, lend what you can. A sharing platform for campus students.">
     <meta name="twitter:card" content="summary">
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('campuslend_theme');
+          var isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
 </head>
   <body>
     <div id="root"></div>
