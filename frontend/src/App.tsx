@@ -1,4 +1,4 @@
-import {
+﻿import {
   AlertTriangle,
   ArrowRight,
   Bell,
@@ -12,7 +12,9 @@ import {
   Clock,
   Compass,
   Eye,
+  EyeOff,
   FileText,
+  KeyRound,
   GraduationCap,
   Image,
   IndianRupee,
@@ -86,7 +88,7 @@ const categoryLabels: Record<Category, string> = {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const BUCKET = 'item-images';
 
-// ── Supabase Storage upload helper ─────────────────────────────
+// â”€â”€ Supabase Storage upload helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function uploadImageToStorage(file: File, userId: string): Promise<string> {
   const ext = file.name.split('.').pop() ?? 'jpg';
   const path = `${userId}/${Date.now()}.${ext}`;
@@ -133,7 +135,7 @@ function App() {
           setSession(data.session);
         }
       } catch {
-        /* getSession failed — session stays null, user sees landing page */
+        /* getSession failed â€” session stays null, user sees landing page */
       } finally {
         if (isMounted) setReady(true);
       }
@@ -162,7 +164,7 @@ function App() {
         const data = await api.getMyProfile();
         setProfile(data);
       } catch {
-        /* Profile fetch failed — stays null, show spinner until resolved */
+        /* Profile fetch failed â€” stays null, show spinner until resolved */
       } finally {
         setProfileLoading(false);
       }
@@ -189,9 +191,9 @@ function App() {
     if (!hasPhone || !hasSid || !hasResidence) {
       setPendingAction(action);
       setProfileModalOpen(true);
-      return false; // not complete — caller should abort
+      return false; // not complete â€” caller should abort
     }
-    return true; // complete — caller can proceed
+    return true; // complete â€” caller can proceed
   };
 
   // Called when ProfileCompletionModal saves successfully
@@ -241,13 +243,13 @@ function App() {
     );
   }
 
-  // Profile fetches in background — safeProfile fallback below handles the
+  // Profile fetches in background â€” safeProfile fallback below handles the
   // null case so we never block rendering on this network call.
   const userPecMeta = session?.user?.email ? parsePecEmail(session.user.email) : null;
 
   const userMeta = (session?.user?.user_metadata || {}) as Record<string, any>;
 
-  // profile can be null briefly — guard downstream components with profile!
+  // profile can be null briefly â€” guard downstream components with profile!
   const safeProfile: Profile = profile ?? {
     id: session.user.id,
     full_name: userMeta.full_name || userPecMeta?.formattedName || '',
@@ -303,7 +305,7 @@ function App() {
         )}
       </main>
 
-      {/* Profile completion modal — shown when room/phone not filled yet */}
+      {/* Profile completion modal â€” shown when room/phone not filled yet */}
       {profileModalOpen && (
         <ProfileCompletionModal
           profile={safeProfile}
@@ -324,7 +326,7 @@ function App() {
   );
 }
 
-// ── Profile Completion Modal ────────────────────────────────────
+// â”€â”€ Profile Completion Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProfileCompletionModal({
   profile,
@@ -447,7 +449,7 @@ function ProfileCompletionModal({
               {degree} {branch}
             </p>
             <p className="text-xs text-sky-700 dark:text-sky-300 truncate">
-              Joining Batch {batchYear} • {userEmail || 'Verified PEC Student'}
+              Joining Batch {batchYear} â€¢ {userEmail || 'Verified PEC Student'}
             </p>
           </div>
         </div>
@@ -572,7 +574,7 @@ function ProfileCompletionModal({
   );
 }
 
-// ── Auth ───────────────────────────────────────────────────
+// â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -618,7 +620,7 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
         }
 
         if (data?.user) {
-          onSuccess('Account created — welcome to CampusLend');
+          onSuccess('Account created â€” welcome to CampusLend');
         } else {
           setError('Signup failed. Please try again.');
         }
@@ -635,7 +637,7 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
         onSuccess('Logged in');
       }
     } catch (err: any) {
-      setError(err?.message || 'Network error — please check your connection and try again.');
+      setError(err?.message || 'Network error â€” please check your connection and try again.');
     }
     setLoading(false);
   };
@@ -661,7 +663,7 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
           <form onSubmit={submit} className="mt-6 space-y-4">
             {mode === 'signup' && <Field label="Full name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} required />}
             <Field label="Email" type="email" placeholder="john@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Field label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Field label="Password" type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={password} onChange={(e) => setPassword(e.target.value)} required />
             <button disabled={loading} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-70">
               {loading && <LoaderCircle size={17} className="animate-spin" />}
               {mode === 'login' ? 'Log in' : 'Create account'}
@@ -675,7 +677,7 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   );
 }
 
-// ── Navbar ─────────────────────────────────────────────────
+// â”€â”€ Navbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p: Page) => void; onLogout: () => void; initials: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -738,7 +740,7 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
   );
 }
 
-// ── Explore ────────────────────────────────────────────────
+// â”€â”€ Explore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Explore({
   userId,
@@ -779,7 +781,7 @@ function Explore({
       borrowed.forEach((r) => { map[r.equipment_id] = { status: r.status, requestId: r.request_id }; });
       setMyRequests(map);
     } catch {
-      /* Not critical — request status map stays empty */
+      /* Not critical â€” request status map stays empty */
     }
   }, [userId]);
 
@@ -826,7 +828,7 @@ function Explore({
     }
   };
 
-  // Do NOT block here — render the hero h1 + search UI immediately.
+  // Do NOT block here â€” render the hero h1 + search UI immediately.
   // The grid area below shows an inline spinner while items load.
 
   return (
@@ -859,7 +861,7 @@ function Explore({
         <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Available near you</h2>
         <span className="text-xs sm:text-sm font-semibold text-slate-400 dark:text-slate-500">{filtered.length} items</span>
       </div>
-      {/* Grid — shows inline spinner while loading so the hero above is already visible */}
+      {/* Grid â€” shows inline spinner while loading so the hero above is already visible */}
       {loading ? (
         <div className="flex justify-center py-20">
           <LoaderCircle size={28} className="animate-spin text-sky-400" />
@@ -917,7 +919,7 @@ function ItemCard({
 
   return (
     <>
-      {/* ── Full-Screen Lightbox ── */}
+      {/* â”€â”€ Full-Screen Lightbox â”€â”€ */}
       {lightboxOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
@@ -1016,7 +1018,7 @@ function ItemCard({
             </div>
           )}
 
-          {/* Front / Back switcher — only if back photo exists */}
+          {/* Front / Back switcher â€” only if back photo exists */}
           {hasBack && item.image_url && (
             <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center rounded-full bg-black/50 backdrop-blur-sm p-0.5 gap-0.5">
               <button
@@ -1078,7 +1080,7 @@ function ItemCard({
           </div>
 
           <p className="mt-3 flex-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Listed by <span className="font-bold text-slate-700 dark:text-slate-200">{item.owner.full_name}</span> · Room {item.owner.room_number}
+            Listed by <span className="font-bold text-slate-700 dark:text-slate-200">{item.owner.full_name}</span> Â· Room {item.owner.room_number}
           </p>
 
           <div className="mt-4">
@@ -1106,7 +1108,7 @@ function ItemCard({
                 {item.status !== 'available'
                   ? (isSell ? 'Sold out' : 'Currently borrowed')
                   : requestStatus === 'approved'
-                  ? (isSell ? 'Purchased ✓' : 'Approved ✓')
+                  ? (isSell ? 'Purchased âœ“' : 'Approved âœ“')
                   : (isSell ? 'Buy this item' : 'Request to borrow')}
               </button>
             )}
@@ -1117,7 +1119,7 @@ function ItemCard({
   );
 }
 
-// ── Image Upload Component ──────────────────────────────────
+// â”€â”€ Image Upload Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Shared single-slot uploader used inside DualImageUploader
 function SingleSlotUploader({
@@ -1191,7 +1193,7 @@ function SingleSlotUploader({
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-slate-900/80">
               <LoaderCircle size={24} className={`animate-spin ${accentSpinner}`} />
-              <span className="ml-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Uploading…</span>
+              <span className="ml-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Uploadingâ€¦</span>
             </div>
           )}
           {!uploading && (
@@ -1217,7 +1219,7 @@ function SingleSlotUploader({
           </div>
           <div className="text-center px-2">
             <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Drop here or <span className={accentColor === 'amber' ? 'text-amber-600 dark:text-amber-400' : 'text-sky-600 dark:text-sky-400'}>browse</span></p>
-            <p className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">JPEG, PNG, WebP · max 5 MB</p>
+            <p className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">JPEG, PNG, WebP Â· max 5 MB</p>
           </div>
         </div>
       )}
@@ -1227,7 +1229,7 @@ function SingleSlotUploader({
   );
 }
 
-// ── Dual Image Uploader (Front + Back) with authenticity warning ──
+// â”€â”€ Dual Image Uploader (Front + Back) with authenticity warning â”€â”€
 function DualImageUploader({
   onFrontUploaded,
   onBackUploaded,
@@ -1239,7 +1241,7 @@ function DualImageUploader({
 }) {
   return (
     <div className="space-y-4">
-      {/* ⚠️ Legitimacy Warning Banner */}
+      {/* âš ï¸ Legitimacy Warning Banner */}
       <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
         <div className="shrink-0 mt-0.5">
           <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400" />
@@ -1247,24 +1249,24 @@ function DualImageUploader({
         <div className="min-w-0">
           <p className="text-xs font-extrabold text-amber-800 dark:text-amber-300 mb-1">Upload genuine photos of your actual item</p>
           <ul className="space-y-0.5 text-[11px] text-amber-700 dark:text-amber-400/90 leading-relaxed">
-            <li>• Take real photos yourself — do <strong>not</strong> use stock images or brand catalogue photos.</li>
-            <li>• Both <strong>front</strong> and <strong>back</strong> views are required so borrowers can inspect wear, ports, labels, or any damage.</li>
-            <li>• Listings with misleading or downloaded images will be removed.</li>
+            <li>â€¢ Take real photos yourself â€” do <strong>not</strong> use stock images or brand catalogue photos.</li>
+            <li>â€¢ Both <strong>front</strong> and <strong>back</strong> views are required so borrowers can inspect wear, ports, labels, or any damage.</li>
+            <li>â€¢ Listings with misleading or downloaded images will be removed.</li>
           </ul>
         </div>
       </div>
 
-      {/* Two side-by-side upload slots — responsive grid */}
+      {/* Two side-by-side upload slots â€” responsive grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <SingleSlotUploader
-          label="📷 Front View"
+          label="ðŸ“· Front View"
           sublabel="Main face of item"
           onUploaded={onFrontUploaded}
           userId={userId}
           accentColor="sky"
         />
         <SingleSlotUploader
-          label="🔄 Back View"
+          label="ðŸ”„ Back View"
           sublabel="Reverse / tags / ports"
           onUploaded={onBackUploaded}
           userId={userId}
@@ -1275,7 +1277,7 @@ function DualImageUploader({
   );
 }
 
-// ── Single Listing Card in "Your Listings" with Front/Back & Lightbox ──
+// â”€â”€ Single Listing Card in "Your Listings" with Front/Back & Lightbox â”€â”€
 function MyListingCard({
   item,
   onDelete,
@@ -1444,17 +1446,17 @@ function MyListingCard({
                 <div className="flex flex-wrap gap-1 text-[11px]">
                   {item.rate_per_day != null && (
                     <span className="rounded bg-teal-50 border border-teal-100 px-1.5 py-0.5 text-teal-700 font-bold dark:bg-teal-950/50 dark:border-teal-900 dark:text-teal-300">
-                      ₹{item.rate_per_day}/day
+                      â‚¹{item.rate_per_day}/day
                     </span>
                   )}
                   {item.rate_per_month != null && (
                     <span className="rounded bg-sky-50 border border-sky-100 px-1.5 py-0.5 text-sky-700 font-bold dark:bg-sky-950/50 dark:border-sky-900 dark:text-sky-300">
-                      ₹{item.rate_per_month}/mo
+                      â‚¹{item.rate_per_month}/mo
                     </span>
                   )}
                   {item.rate_per_semester != null && (
                     <span className="rounded bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 text-indigo-700 font-bold dark:bg-indigo-950/50 dark:border-indigo-900 dark:text-indigo-300">
-                      ₹{item.rate_per_semester}/sem
+                      â‚¹{item.rate_per_semester}/sem
                     </span>
                   )}
                   {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
@@ -1482,7 +1484,7 @@ function MyListingCard({
   );
 }
 
-// ── Add Item ───────────────────────────────────────────────
+// â”€â”€ Add Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AddItem({
   ownerId,
@@ -1590,7 +1592,7 @@ function AddItem({
       });
 
       setMyItems((prev) => [newItem, ...prev]);
-      showToast(itemType === 'sell' ? 'Item listed for sale 🎉' : 'Item added to campus library 🎉');
+      showToast(itemType === 'sell' ? 'Item listed for sale ðŸŽ‰' : 'Item added to campus library ðŸŽ‰');
 
       // Reset form
       setName('');
@@ -1628,7 +1630,7 @@ function AddItem({
     if (listingType === 'sell') {
       const p = parseFloat(salePrice);
       if (!salePrice.trim() || isNaN(p) || p <= 0) {
-        setError('Please enter a valid selling price in ₹.');
+        setError('Please enter a valid selling price in â‚¹.');
         return;
       }
     } else {
@@ -1704,7 +1706,7 @@ function AddItem({
 
       {/* Main 2-Column Wide Form */}
       <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* ── LEFT COLUMN: Basic Item Info & Photo ─────────────────── */}
+        {/* â”€â”€ LEFT COLUMN: Basic Item Info & Photo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="lg:col-span-7 space-y-6">
           {/* Card: Item Details */}
           <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -1816,7 +1818,7 @@ function AddItem({
               </div>
               <div>
                 <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">2. Item Photos</h2>
-                <p className="text-xs text-slate-400 dark:text-slate-500">Front & back required — help peers inspect condition</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Front & back required â€” help peers inspect condition</p>
               </div>
             </div>
             <DualImageUploader
@@ -1828,7 +1830,7 @@ function AddItem({
 
         </div>
 
-        {/* ── RIGHT COLUMN: Listing Type, Pricing & Live Preview ───── */}
+        {/* â”€â”€ RIGHT COLUMN: Listing Type, Pricing & Live Preview â”€â”€â”€â”€â”€ */}
         <div className="lg:col-span-5 space-y-6">
           {/* Card: Listing Type & Pricing */}
           <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -2001,7 +2003,7 @@ function AddItem({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Free for 2 days, ₹50 refundable deposit"
+                    placeholder="e.g. Free for 2 days, â‚¹50 refundable deposit"
                     value={priceNote}
                     onChange={(e) => setPriceNote(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-medium outline-none placeholder:text-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
@@ -2083,14 +2085,14 @@ function AddItem({
                 <div className="pt-1">
                   {listingType === 'sell' ? (
                     <div className="flex items-center gap-1 text-slate-900 dark:text-white font-extrabold text-sm">
-                      <IndianRupee size={13} />{salePrice || '—'}
+                      <IndianRupee size={13} />{salePrice || 'â€”'}
                       <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 ml-1">Buy now</span>
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-1 text-[11px]">
-                      {rateDay && <span className="rounded bg-teal-50 px-1.5 py-0.5 text-teal-700 font-bold dark:bg-teal-950/50 dark:text-teal-300">₹{rateDay}/day</span>}
-                      {rateMonth && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700 font-bold dark:bg-sky-950/50 dark:text-sky-300">₹{rateMonth}/mo</span>}
-                      {rateSemester && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 font-bold dark:bg-indigo-950/50 dark:text-indigo-300">₹{rateSemester}/sem</span>}
+                      {rateDay && <span className="rounded bg-teal-50 px-1.5 py-0.5 text-teal-700 font-bold dark:bg-teal-950/50 dark:text-teal-300">â‚¹{rateDay}/day</span>}
+                      {rateMonth && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700 font-bold dark:bg-sky-950/50 dark:text-sky-300">â‚¹{rateMonth}/mo</span>}
+                      {rateSemester && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 font-bold dark:bg-indigo-950/50 dark:text-indigo-300">â‚¹{rateSemester}/sem</span>}
                       {!rateDay && !rateMonth && !rateSemester && (
                         <span className="text-slate-400 dark:text-slate-500 text-xs italic">Set rental rates above</span>
                       )}
@@ -2120,7 +2122,7 @@ function AddItem({
         </div>
       </form>
 
-      {/* ── My Listings Section (Wide Grid) ────────────────────────── */}
+      {/* â”€â”€ My Listings Section (Wide Grid) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="mt-16 border-t border-slate-200/80 dark:border-slate-800 pt-10">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
@@ -2151,7 +2153,7 @@ function AddItem({
   );
 }
 
-// ── Dashboard ──────────────────────────────────────────────
+// â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: string) => void }) {
   const [outgoing, setOutgoing] = useState<BorrowRequestWithDetails[]>([]);
@@ -2249,9 +2251,9 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="text-sm font-extrabold truncate text-slate-900 dark:text-white">{request.equipment.equipment_name}</h3>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{request.borrower.full_name} · Room {request.borrower.room_number}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{request.borrower.full_name} Â· Room {request.borrower.room_number}</p>
                       {request.borrower.phone_number && (
-                        <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">📞 {request.borrower.phone_number}</p>
+                        <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">ðŸ“ž {request.borrower.phone_number}</p>
                       )}
                     </div>
                     <StatusBadge status={request.status} />
@@ -2274,7 +2276,7 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
   );
 }
 
-// ── Profile ────────────────────────────────────────────────
+// â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProfilePage({
   profile,
@@ -2368,7 +2370,7 @@ function ProfilePage({
               </span>
             </div>
             <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-              {degree} {branch} • Batch of {batchYear}
+              {degree} {branch} â€¢ Batch of {batchYear}
             </p>
             {userEmail && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{userEmail}</p>}
           </div>
@@ -2490,6 +2492,8 @@ function ProfilePage({
         </button>
       </div>
 
+      <ChangePasswordSection showToast={showToast} />
+
       <div className="mt-5 flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-xs sm:text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-400">
         <ShieldCheck size={20} className="shrink-0" />
         <p>
@@ -2500,7 +2504,7 @@ function ProfilePage({
   );
 }
 
-// ── Shared bits ────────────────────────────────────────────
+// â”€â”€ Shared bits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatusBadge({ status }: { status: RequestStatus }) {
   return (
@@ -2524,6 +2528,209 @@ function Empty({ icon, title, text }: { icon: ReactNode; title: string; text: st
       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-400 dark:bg-slate-800 dark:text-slate-500">{icon}</div>
       <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">{title}</h3>
       <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">{text}</p>
+    </div>
+  );
+}
+
+// ── Password input with show/hide toggle (reused across profile + auth) ──
+
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder = '••••••••',
+  required,
+  autoComplete,
+}: {
+  id?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  autoComplete?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        type={visible ? 'text' : 'password'}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        autoComplete={autoComplete}
+        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-11 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={() => setVisible((v) => !v)}
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        className="absolute right-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 transition"
+      >
+        {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+      </button>
+    </div>
+  );
+}
+
+// ── Change Password section (used inside ProfilePage) ──
+
+function ChangePasswordSection({ showToast }: { showToast: (msg: string) => void }) {
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const MIN_LENGTH = 6; // Supabase default minimum
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!currentPw || !newPw || !confirmPw) {
+      setError('Please fill in all password fields.');
+      return;
+    }
+    if (newPw.length < MIN_LENGTH) {
+      setError(`New password must be at least ${MIN_LENGTH} characters.`);
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setError('New password and confirmation do not match.');
+      return;
+    }
+    if (newPw === currentPw) {
+      setError('New password must be different from the current password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Step 1: reauthenticate with the current password to verify it
+      const { data: sessionData } = await supabase.auth.getSession();
+      const email = sessionData?.session?.user?.email;
+      if (!email) throw new Error('Session expired — please log in again.');
+
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPw,
+      });
+      if (signInErr) {
+        setError('Current password is incorrect.');
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: update to the new password
+      const { error: updateErr } = await supabase.auth.updateUser({ password: newPw });
+      if (updateErr) throw updateErr;
+
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+      setSuccess('Password changed successfully.');
+      showToast('Password changed successfully');
+    } catch (err: any) {
+      setError(err?.message || 'Could not change password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 sm:mt-8 rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-colors duration-200">
+      <div className="mb-5 sm:mb-6 flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
+          <KeyRound size={18} />
+        </div>
+        <div>
+          <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">Change Password</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Update your account password securely.</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-xs sm:text-sm font-semibold text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-xs sm:text-sm font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+          <CheckCircle2 size={16} className="shrink-0" />
+          {success}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="cp-current" className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
+            Current password
+          </label>
+          <PasswordInput
+            id="cp-current"
+            value={currentPw}
+            onChange={setCurrentPw}
+            placeholder="Enter current password"
+            required
+            autoComplete="current-password"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="cp-new" className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
+            New password
+          </label>
+          <PasswordInput
+            id="cp-new"
+            value={newPw}
+            onChange={setNewPw}
+            placeholder="At least 6 characters"
+            required
+            autoComplete="new-password"
+          />
+          {newPw.length > 0 && newPw.length < MIN_LENGTH && (
+            <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium">
+              {MIN_LENGTH - newPw.length} more character{MIN_LENGTH - newPw.length !== 1 ? 's' : ''} needed
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="cp-confirm" className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
+            Confirm new password
+          </label>
+          <PasswordInput
+            id="cp-confirm"
+            value={confirmPw}
+            onChange={setConfirmPw}
+            placeholder="Re-enter new password"
+            required
+            autoComplete="new-password"
+          />
+          {confirmPw.length > 0 && newPw !== confirmPw && (
+            <p className="mt-1.5 text-xs text-rose-600 dark:text-rose-400 font-medium">Passwords do not match</p>
+          )}
+          {confirmPw.length > 0 && newPw === confirmPw && newPw.length >= MIN_LENGTH && (
+            <p className="mt-1.5 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+              <CheckCircle2 size={13} /> Passwords match
+            </p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex min-h-[46px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-sky-600 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {loading && <LoaderCircle size={17} className="animate-spin" />}
+          {loading ? 'Updating…' : 'Update password'}
+        </button>
+      </form>
     </div>
   );
 }

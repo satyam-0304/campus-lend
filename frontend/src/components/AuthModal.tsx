@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { ArrowRight, LoaderCircle, X } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, LoaderCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isValidPecEmail, parsePecEmail } from '../lib/pecEmail';
 
@@ -8,6 +8,46 @@ interface AuthModalProps {
   onClose: () => void;
   initialMode?: 'login' | 'signup';
   onSuccess: (msg: string) => void;
+}
+
+/** Reusable password input with show/hide toggle */
+function PasswordInput({
+  value,
+  onChange,
+  placeholder = '••••••••',
+  id,
+  required,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  id?: string;
+  required?: boolean;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        type={visible ? 'text' : 'password'}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        autoComplete={id === 'auth-password' ? 'current-password' : 'new-password'}
+        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-11 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={() => setVisible((v) => !v)}
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        className="absolute right-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 transition"
+      >
+        {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+      </button>
+    </div>
+  );
 }
 
 export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthModalProps) {
@@ -177,14 +217,14 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }:
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Password</label>
-            <input
-              type="password"
-              placeholder="••••••••"
+            <label htmlFor="auth-password" className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
+              Password
+            </label>
+            <PasswordInput
+              id="auth-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               required
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm font-medium outline-none transition placeholder:text-slate-300 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
             />
           </div>
 
