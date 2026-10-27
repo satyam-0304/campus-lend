@@ -15,13 +15,24 @@ function getTransporter() {
   if (!nodemailer) return null;
 
   const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  const port = parseInt(process.env.SMTP_PORT || '465', 10);
   const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const rawPass = process.env.SMTP_PASS;
+  const pass = rawPass ? rawPass.replace(/\s+/g, '') : '';
 
-  if (!host || !user || !pass) {
+  if (!user || !pass) {
     return null;
   }
+
+  // Optimize for Gmail (either explicit host, or user ends with @gmail.com)
+  if (host === 'smtp.gmail.com' || (!host && user.endsWith('@gmail.com'))) {
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user, pass },
+    });
+  }
+
+  if (!host) return null;
 
   return nodemailer.createTransport({
     host,
