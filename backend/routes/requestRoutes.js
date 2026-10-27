@@ -8,14 +8,14 @@ const authMiddleware = require('../middleware/authMiddleware');
 // All request routes are protected
 router.use(authMiddleware);
 
-// Reusable select string — joins equipment name and both profile sides
+// Select string for requests with full details (for owners who have granted/received requests)
 const REQUEST_SELECT =
   'request_id, equipment_id, borrower_id, owner_id, status, created_at, requested_quantity, ' +
   'equipment:equipment_id(equipment_name), ' +
-  'borrower:profiles!borrower_id(id, full_name, room_number, phone_number), ' +
-  'owner:profiles!owner_id(id, full_name, room_number, phone_number)';
+  'borrower:profiles!borrower_id(id, full_name, hostel_name, room_number, phone_number), ' +
+  'owner:profiles!owner_id(id, full_name, hostel_name, room_number, phone_number)';
 
-// ── GET /dashboard ────────────────────────────────────────────
+// ── GET /dashboard ──────────────────────────────────────────────────
 // Protected. Returns { borrowed: [...], lending: [...] } for current user.
 // NOTE: must be defined before /:request_id to avoid route conflict.
 router.get('/dashboard', async (req, res) => {
@@ -48,13 +48,43 @@ router.get('/dashboard', async (req, res) => {
     return res.status(503).json({ error: lendingResult.error.message });
   }
 
+  // Privacy protection: for incoming lending requests that are still 'pending' or 'rejected',
+  // do not expose borrower's room_number until the owner explicitly approves.
+  // When 'approved', the room number is shared to facilitate the pickup coordination.
+  const sanitizedLending = (lendingResult.data || []).map((reqItem) => {
+    if (reqItem.status !== 'approved' && reqItem.borrower) {
+      return {
+        ...reqItem,
+        borrower: {
+          ...reqItem.borrower,
+          room_number: '', // Redacted until owner approves
+        },
+      };
+    }
+    return reqItem;
+  });
+
+  // Similarly for borrowed requests: owner's room_number is only shared when 'approved'
+  const sanitizedBorrowed = (borrowedResult.data || []).map((reqItem) => {
+    if (reqItem.status !== 'approved' && reqItem.owner) {
+      return {
+        ...reqItem,
+        owner: {
+          ...reqItem.owner,
+          room_number: '', // Redacted until request is approved
+        },
+      };
+    }
+    return reqItem;
+  });
+
   res.json({
-    borrowed: borrowedResult.data,
-    lending: lendingResult.data,
+    borrowed: sanitizedBorrowed,
+    lending: sanitizedLending,
   });
 });
 
-// ── POST / ────────────────────────────────────────────────────
+// ── POST / ──────────────────────────────────────────────────────────
 // Protected. Creates a borrow request.
 // Enforces: borrower_id = req.user.id, borrower ≠ owner, equipment must be available.
 router.post('/', async (req, res) => {
@@ -102,10 +132,17 @@ router.post('/', async (req, res) => {
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json(data);
+
+  // Redact owner room_number from the newly created pending request response
+  const sanitized = data && data.owner ? {
+    ...data,
+    owner: { ...data.owner, room_number: '' },
+  } : data;
+
+  res.status(201).json(sanitized);
 });
 
-// ── PUT /:request_id ──────────────────────────────────────────
+// ── PUT /:request_id ────────────────────────────────────────────────
 // Protected. Owner-only: approve or reject a borrow request.
 // On approval, decrement equipment quantity and update status accordingly.
 router.put('/:request_id', async (req, res) => {
@@ -160,10 +197,16 @@ router.put('/:request_id', async (req, res) => {
     }
   }
 
-  res.json(data);
+  // If not approved, redact borrower room_number
+  const sanitized = (data && status !== 'approved' && data.borrower) ? {
+    ...data,
+    borrower: { ...data.borrower, room_number: '' },
+  } : data;
+
+  res.json(sanitized);
 });
 
-// ── DELETE /:request_id ───────────────────────────────────────
+// ── DELETE /:request_id ─────────────────────────────────────────────
 // Protected. Borrower-only: cancel a pending borrow request.
 // Only allowed when status is 'pending' (cannot cancel approved/rejected).
 router.delete('/:request_id', async (req, res) => {

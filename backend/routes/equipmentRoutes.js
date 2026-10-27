@@ -7,18 +7,24 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 const VALID_CATEGORIES = ['academics', 'electronics', 'sports', 'event_wear'];
 
-// Reusable select string — joins owner profile via FK
-const EQUIPMENT_SELECT =
+// Public equipment select: does NOT expose room_number or phone_number
+const PUBLIC_EQUIPMENT_SELECT =
   'equipment_id, equipment_name, category, status, owner_id, image_url, image_back_url, price_note, ' +
   'quantity, listing_type, sale_price, rate_per_day, rate_per_month, rate_per_semester, created_at, ' +
-  'owner:profiles!owner_id(id, full_name, room_number, phone_number)';
+  'owner:profiles!owner_id(id, full_name, hostel_name, branch, batch_year)';
 
-// ── GET / ─────────────────────────────────────────────────────
-// Public. Returns all available equipment with owner info.
+// Owner equipment select (used for /mine or newly created listings by the owner):
+const OWNER_EQUIPMENT_SELECT =
+  'equipment_id, equipment_name, category, status, owner_id, image_url, image_back_url, price_note, ' +
+  'quantity, listing_type, sale_price, rate_per_day, rate_per_month, rate_per_semester, created_at, ' +
+  'owner:profiles!owner_id(id, full_name, hostel_name, room_number, phone_number, branch, batch_year)';
+
+// ── GET / ──────────────────────────────────────────────────────────
+// Public. Returns all available equipment with sanitized owner info (room_number kept private).
 router.get('/', async (_req, res) => {
   const { data, error } = await serviceClient
     .from('equipment')
-    .select(EQUIPMENT_SELECT)
+    .select(PUBLIC_EQUIPMENT_SELECT)
     .eq('status', 'available')
     .order('created_at', { ascending: false });
 
@@ -26,12 +32,12 @@ router.get('/', async (_req, res) => {
   res.json(data);
 });
 
-// ── GET /mine ─────────────────────────────────────────────────
+// ── GET /mine ──────────────────────────────────────────────────────
 // Protected. Returns all equipment listed by the authenticated user (all statuses).
 router.get('/mine', authMiddleware, async (req, res) => {
   const { data, error } = await serviceClient
     .from('equipment')
-    .select(EQUIPMENT_SELECT)
+    .select(OWNER_EQUIPMENT_SELECT)
     .eq('owner_id', req.user.id)
     .order('created_at', { ascending: false });
 
@@ -39,7 +45,7 @@ router.get('/mine', authMiddleware, async (req, res) => {
   res.json(data);
 });
 
-// ── POST / ────────────────────────────────────────────────────
+// ── POST / ─────────────────────────────────────────────────────────
 // Protected. Adds a new item. owner_id is always forced to req.user.id.
 // image_url (front photo) is required; image_back_url (back photo) is required for new listings.
 // supports listing_type ('sell' | 'rent'), sale_price, rate_per_day, rate_per_month, rate_per_semester, quantity.
@@ -98,7 +104,7 @@ router.post('/', authMiddleware, async (req, res) => {
       if (parsedRateDay !== null) parts.push(`₹${parsedRateDay}/day`);
       if (parsedRateMonth !== null) parts.push(`₹${parsedRateMonth}/mo`);
       if (parsedRateSemester !== null) parts.push(`₹${parsedRateSemester}/sem`);
-      effectivePriceNote = parts.join(' · ') || 'Free / Flexible';
+      effectivePriceNote = parts.join(' • ') || 'Free / Flexible';
     }
   }
 
@@ -119,14 +125,14 @@ router.post('/', authMiddleware, async (req, res) => {
       rate_per_month: parsedRateMonth,
       rate_per_semester: parsedRateSemester,
     })
-    .select(EQUIPMENT_SELECT)
+    .select(OWNER_EQUIPMENT_SELECT)
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
 });
 
-// ── DELETE /:equipment_id ─────────────────────────────────────
+// ── DELETE /:equipment_id ──────────────────────────────────────────
 // Protected. Deletes item only if authenticated user is the owner.
 router.delete('/:equipment_id', authMiddleware, async (req, res) => {
   const { equipment_id } = req.params;

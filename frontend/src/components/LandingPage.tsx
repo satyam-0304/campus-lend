@@ -589,7 +589,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                     </div>
                     <h4 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Connect</h4>
                     <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                      View seller profile, item condition, and room details.
+                      View seller profile, item condition, and campus hostel details.
                     </p>
                   </div>
 
@@ -767,7 +767,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                 </div>
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-600 dark:text-sky-400">Academics</span>
                 <h3 className="mt-1 text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-sky-600 dark:text-white dark:group-hover:text-sky-400 transition">Scientific Calculator</h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Casio FX-991EX · Rahul (Room 302)</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Casio FX-991EX · Rahul (Hostel 5)</p>
               </div>
               <div className="mt-5 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
@@ -802,7 +802,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                 </div>
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Electronics</span>
                 <h3 className="mt-1 text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400 transition">Arduino Uno Kit</h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">USB Cable + Sensors · Sneha (Room 108)</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">USB Cable + Sensors · Sneha (Hostel 4)</p>
               </div>
               <div className="mt-5 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
@@ -837,7 +837,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                 </div>
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-600 dark:text-sky-400">Academics</span>
                 <h3 className="mt-1 text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-sky-600 dark:text-white dark:group-hover:text-sky-400 transition">Engineering Books</h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">3rd Sem Set · Amit (Room 405)</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">3rd Sem Set · Amit (Hostel 3)</p>
               </div>
               <div className="mt-5 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
@@ -872,7 +872,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                 </div>
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Sports</span>
                 <h3 className="mt-1 text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400 transition">Match Football</h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Size 5 Leather · Varun (Room 412)</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Size 5 Leather · Varun (Hostel 1)</p>
               </div>
               <div className="mt-5 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
@@ -907,7 +907,7 @@ export function LandingPage({ onLogin, onSignUp }: LandingPageProps) {
                 </div>
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Academics</span>
                 <h3 className="mt-1 text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-purple-600 dark:text-white dark:group-hover:text-purple-400 transition">Chemistry Lab Coat</h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Size M · Ananya (Room 215)</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Size M · Ananya (Hostel 2)</p>
               </div>
               <div className="mt-5 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">

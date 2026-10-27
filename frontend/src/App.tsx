@@ -536,7 +536,7 @@ function ProfileCompletionModal({
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label>
+<div className="flex items-center justify-between mb-1.5"><label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label><span className="text-[11px] text-slate-400 dark:text-slate-500">Private</span></div>
                 <input
                   type="text"
                   placeholder="e.g. 204-B"
@@ -1080,7 +1080,7 @@ function ItemCard({
           </div>
 
           <p className="mt-3 flex-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Listed by <span className="font-bold text-slate-700 dark:text-slate-200">{item.owner.full_name}</span> Â· Room {item.owner.room_number}
+            Listed by <span className="font-bold text-slate-700 dark:text-slate-200">{item.owner.full_name}</span>{item.owner.hostel_name ? ` • ${item.owner.hostel_name} Hostel` : ""}
           </p>
 
           <div className="mt-4">
@@ -2251,7 +2251,7 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="text-sm font-extrabold truncate text-slate-900 dark:text-white">{request.equipment.equipment_name}</h3>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{request.borrower.full_name} Â· Room {request.borrower.room_number}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{request.borrower.full_name}{request.status === 'approved' && request.borrower.room_number ? ` • Room ${request.borrower.room_number}` : ''}</p>
                       {request.borrower.phone_number && (
                         <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">ðŸ“ž {request.borrower.phone_number}</p>
                       )}
@@ -2457,7 +2457,7 @@ function ProfilePage({
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label>
+<div className="flex items-center justify-between mb-1.5"><label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label><span className="text-[11px] text-slate-400 dark:text-slate-500">Private</span></div>
                   <input
                     type="text"
                     placeholder="e.g. 204-B"
@@ -2497,7 +2497,7 @@ function ProfilePage({
       <div className="mt-5 flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-xs sm:text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-400">
         <ShieldCheck size={20} className="shrink-0" />
         <p>
-          <span className="font-extrabold">Your details are verified by PEC domain.</span> Only your name and room/location are shown when you list an item to peers.
+          <span className="font-extrabold">Your details are verified by PEC domain.</span> Only your name is shown publicly. Your room number is private and never shown on marketplace listings.
         </p>
       </div>
     </div>
