@@ -1,4 +1,4 @@
-﻿import {
+import {
   AlertTriangle,
   ArrowRight,
   Bell,
@@ -23,6 +23,7 @@
   Layers,
   LoaderCircle,
   LogOut,
+  Mail,
   MapPin,
   Menu,
   Minus,
