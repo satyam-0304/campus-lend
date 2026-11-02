@@ -147,7 +147,7 @@ async function sendOtpEmail(toEmail, otpCode) {
 
   return {
     success: false,
-    error: 'Email delivery service is not configured on the server. Please configure SMTP or Resend credentials.',
+    error: 'Email delivery service is not configured on the server. Please add EMAIL_USER and EMAIL_APP_PASSWORD (or SMTP_USER and SMTP_PASS) to your server environment variables.',
   };
 }
 

@@ -76,3 +76,23 @@ button:disabled {
 }
 
 /* Mobile font-weight override removed – keep default font weights for consistency */
+
+/* Global Dark Mode Input & Typing Safeguards */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: #f8fafc;
+  caret-color: #38bdf8;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8;
+}
+
+html.dark input:focus,
+html.dark textarea:focus {
+  background-color: #1e293b;
+  color: #ffffff;
+}
+
