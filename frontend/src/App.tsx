@@ -503,6 +503,7 @@ function App() {
         isLoggedInUser={otpModalState.isLoggedInUser}
         onClose={() => setOtpModalState((s) => ({ ...s, isOpen: false }))}
         onVerified={async () => {
+          setProfile((prev) => (prev ? { ...prev, is_email_verified: true, isEmailVerified: true } : prev));
           if (session?.user) {
             try {
               const updated = await api.getMyProfile();

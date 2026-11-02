@@ -40,6 +40,20 @@ router.get('/me', async (req, res) => {
     // Non-blocking if table is not yet migrated
   }
 
+  // Also verify against email_verifications table
+  if (!isEmailVerified && req.user?.email) {
+    try {
+      const { data: emailRow } = await serviceClient
+        .from('email_verifications')
+        .select('verified')
+        .eq('email', req.user.email.toLowerCase().trim())
+        .maybeSingle();
+      if (emailRow?.verified) {
+        isEmailVerified = true;
+      }
+    } catch {}
+  }
+
   res.json({
     ...data,
     is_email_verified: isEmailVerified,
@@ -122,6 +136,20 @@ router.put('/me', async (req, res) => {
     }
   } catch {
     // Non-blocking if table is not yet migrated
+  }
+
+  // Also verify against email_verifications table
+  if (!isEmailVerified && req.user?.email) {
+    try {
+      const { data: emailRow } = await serviceClient
+        .from('email_verifications')
+        .select('verified')
+        .eq('email', req.user.email.toLowerCase().trim())
+        .maybeSingle();
+      if (emailRow?.verified) {
+        isEmailVerified = true;
+      }
+    } catch {}
   }
 
   res.json({

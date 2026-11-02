@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const { serviceClient } = require('../config/supabaseClient');
-const { sendOtpEmail } = require('../services/emailService');
+const { sendOtpEmail, sendVerificationSuccessEmail } = require('../services/emailService');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Fallback in-memory store if DB table user_otp_verifications is pending migration
@@ -106,20 +106,11 @@ router.post('/otp/send', authMiddleware, async (req, res) => {
       existing = dbData;
     }
 
-    // 2. Return early if already verified
-    if (existing?.is_email_verified) {
-      return res.json({
-        success: true,
-        isEmailVerified: true,
-        message: 'Your email is already verified.',
-      });
-    }
-
-    // 3. Enforce 60-second cooldown using otp_last_sent_at
+    // 2. Enforce 20-second cooldown using otp_last_sent_at
     const lastSent = existing?.otp_last_sent_at || existing?.otpLastSentAt;
     if (lastSent) {
       const elapsed = Date.now() - new Date(lastSent).getTime();
-      const COOLDOWN_MS = 60 * 1000;
+      const COOLDOWN_MS = 20 * 1000;
       if (elapsed < COOLDOWN_MS) {
         const remainingSeconds = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
         return res.status(429).json({
@@ -305,15 +296,26 @@ router.post('/otp/verify', authMiddleware, async (req, res) => {
       ...updatePayload,
     });
 
-    // Also update public.profiles if column exists
+    // Also update email_verifications table for global compatibility
     try {
+      const cleanEmail = (req.user?.email || '').toLowerCase().trim();
       await serviceClient
-        .from('profiles')
-        .update({ is_email_verified: true })
-        .eq('id', userId);
-    } catch {
-      // Ignored if column not added to profiles yet
-    }
+        .from('email_verifications')
+        .upsert({
+          email: cleanEmail,
+          otp_code: '000000',
+          expires_at: new Date(Date.now() + 86400000).toISOString(),
+          verified: true,
+          created_at: new Date().toISOString(),
+        }, { onConflict: 'email' });
+    } catch {}
+
+    // Send confirmation email
+    const cleanUserEmail = (req.user?.email || '').toLowerCase().trim();
+    const recipientName = req.user?.user_metadata?.full_name || 'PEC Student';
+    sendVerificationSuccessEmail(cleanUserEmail, recipientName).catch((err) => {
+      console.warn('[authOtpRoutes] Error sending confirmation email:', err.message);
+    });
 
     return res.json({
       success: true,
@@ -419,6 +421,8 @@ router.post('/verify-otp', async (req, res) => {
       .from('email_verifications')
       .update({ verified: true })
       .eq('email', cleanEmail);
+
+    sendVerificationSuccessEmail(cleanEmail, 'PEC Student').catch(() => {});
 
     return res.json({
       success: true,

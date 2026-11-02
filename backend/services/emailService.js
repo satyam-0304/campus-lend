@@ -151,4 +151,80 @@ async function sendOtpEmail(toEmail, otpCode) {
   };
 }
 
-module.exports = { sendOtpEmail };
+/**
+ * Send congratulations / success email after successful verification
+ */
+async function sendVerificationSuccessEmail(toEmail, recipientName = 'Student') {
+  const fromAddress = process.env.EMAIL_FROM || '"CampusLend" <no-reply@campuslend.pec.edu.in>';
+  const subject = '🎉 Your PEC Email is Verified — Welcome to CampusLend!';
+  const textContent = `Congratulations!\n\nYour official PEC email (${toEmail}) has been successfully verified on CampusLend.\n\nYou now have full verified access to list, borrow, and lend equipment within the PEC campus community.\n\n— The CampusLend Team`;
+
+  const htmlContent = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="margin: 0; color: #0284c7; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">Campus<span style="color: #0f172a;">Lend</span></h2>
+        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Peer-to-Peer Marketplace for PEC Students</p>
+      </div>
+
+      <div style="background: #f0fdf4; border-radius: 12px; padding: 24px; text-align: center; border: 1px solid #bbf7d0;">
+        <div style="display: inline-block; background: #16a34a; color: #ffffff; font-size: 24px; width: 48px; height: 48px; line-height: 48px; border-radius: 50%; margin-bottom: 12px;">
+          ✓
+        </div>
+        <p style="margin: 0 0 8px 0; color: #15803d; font-size: 18px; font-weight: 800;">Official Email Verified!</p>
+        <p style="margin: 0 0 16px 0; color: #334155; font-size: 14px; line-height: 1.5;">
+          Hello <strong style="color: #0f172a;">${recipientName}</strong>, your official PEC email (<strong style="color: #0284c7;">${toEmail}</strong>) is now confirmed.
+        </p>
+        <p style="margin: 0; color: #475569; font-size: 13px; line-height: 1.5;">
+          You can now freely lend equipment, borrow items from peers, and message campus sellers directly.
+        </p>
+      </div>
+
+      <div style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 16px; text-align: center; color: #94a3b8; font-size: 11px;">
+        <p style="margin: 0;">CampusLend • Punjab Engineering College (PEC), Chandigarh</p>
+      </div>
+    </div>
+  `;
+
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: fromAddress,
+          to: [toEmail],
+          subject,
+          html: htmlContent,
+          text: textContent,
+        }),
+      });
+      return { success: response.ok };
+    } catch (err) {
+      console.warn('[EmailService] Resend success email error:', err.message);
+    }
+  }
+
+  const transporter = getTransporter();
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: fromAddress,
+        to: toEmail,
+        subject,
+        text: textContent,
+        html: htmlContent,
+      });
+      console.log(`[EmailService] Verification success email sent to ${toEmail}`);
+      return { success: true };
+    } catch (err) {
+      console.warn('[EmailService] SMTP success email error:', err.message);
+    }
+  }
+
+  return { success: false };
+}
+
+module.exports = { sendOtpEmail, sendVerificationSuccessEmail };
