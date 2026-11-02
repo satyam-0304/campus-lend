@@ -1,7 +1,8 @@
 'use strict';
 
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 /**
  * anonClient — uses the public anon key.

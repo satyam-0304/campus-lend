@@ -1,6 +1,7 @@
 'use strict';
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const { sendOtpEmail } = require('../services/emailService');
 
 const testRecipient = process.argv[2] || process.env.SMTP_USER;
