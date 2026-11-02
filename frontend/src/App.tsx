@@ -1,4 +1,4 @@
-import {
+﻿import {
   AlertTriangle,
   ArrowRight,
   Bell,
@@ -71,21 +71,21 @@ type Page = 'explore' | 'add' | 'dashboard' | 'profile';
 type PendingAction =
   | { type: 'request'; item: EquipmentWithOwner }
   | {
-      type: 'list';
-      formData: {
-        name: string;
-        category: Category;
-        imageUrl: string;
-        imageBackUrl: string;
-        priceNote: string;
-        quantity: number;
-        listingType: ListingType;
-        salePrice: string;
-        rateDay: string;
-        rateMonth: string;
-        rateSemester: string;
-      };
+    type: 'list';
+    formData: {
+      name: string;
+      category: Category;
+      imageUrl: string;
+      imageBackUrl: string;
+      priceNote: string;
+      quantity: number;
+      listingType: ListingType;
+      salePrice: string;
+      rateDay: string;
+      rateMonth: string;
+      rateSemester: string;
     };
+  };
 
 const categoryLabels: Record<Category, string> = {
   academics: 'Academics',
@@ -470,7 +470,7 @@ function App() {
         showToast={showToast}
       />
 
-      {/* Profile completion modal — shown when room/phone not filled yet */}
+      {/* Profile completion modal â€” shown when room/phone not filled yet */}
       {profileModalOpen && (
         <ProfileCompletionModal
           profile={safeProfile}
@@ -670,9 +670,8 @@ function ProfileCompletionModal({
               <button
                 type="button"
                 onClick={() => setResidenceType('hosteller')}
-                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
-                  residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                }`}
+                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
               >
                 <Building2 size={15} />
                 Hosteller
@@ -680,9 +679,8 @@ function ProfileCompletionModal({
               <button
                 type="button"
                 onClick={() => setResidenceType('day_scholar')}
-                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
-                  residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                }`}
+                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
               >
                 <MapPin size={15} />
                 Day Scholar
@@ -709,7 +707,7 @@ function ProfileCompletionModal({
                 </select>
               </div>
               <div>
-<div className="flex items-center justify-between mb-1.5"><label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label><span className="text-[11px] text-slate-400 dark:text-slate-500">Private</span></div>
+                <div className="flex items-center justify-between mb-1.5"><label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label><span className="text-[11px] text-slate-400 dark:text-slate-500">Private</span></div>
                 <input
                   type="text"
                   placeholder="e.g. 204-B"
@@ -1276,15 +1274,14 @@ function ItemCard({
               <button
                 disabled={item.status !== 'available' || requestStatus === 'approved'}
                 onClick={() => onRequest(item)}
-                className={`min-h-[44px] w-full rounded-xl py-2.5 px-4 text-xs sm:text-sm font-extrabold text-white transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600 ${
-                  isSell ? 'bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-600/15' : 'bg-slate-900 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500'
-                }`}
+                className={`min-h-[44px] w-full rounded-xl py-2.5 px-4 text-xs sm:text-sm font-extrabold text-white transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600 ${isSell ? 'bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-600/15' : 'bg-slate-900 hover:bg-sky-600 dark:bg-sky-600 dark:hover:bg-sky-500'
+                  }`}
               >
                 {item.status !== 'available'
                   ? (isSell ? 'Sold out' : 'Currently borrowed')
                   : requestStatus === 'approved'
-                  ? (isSell ? 'Purchased âœ“' : 'Approved âœ“')
-                  : (isSell ? 'Buy this item' : 'Request to borrow')}
+                    ? (isSell ? 'Purchased âœ“' : 'Approved âœ“')
+                    : (isSell ? 'Buy this item' : 'Request to borrow')}
               </button>
             )}
           </div>
@@ -1596,9 +1593,8 @@ function MyListingCard({
                 {categoryLabels[item.category]}
               </span>
               <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
-                  item.status === 'available' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                }`}
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${item.status === 'available' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                  }`}
               >
                 {item.status}
               </span>
@@ -1931,11 +1927,10 @@ function AddItem({
                         key={cat.id}
                         type="button"
                         onClick={() => setCategory(cat.id)}
-                        className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3 border text-center transition ${
-                          isSelected
-                            ? 'border-sky-500 bg-sky-50/80 text-sky-700 shadow-sm ring-2 ring-sky-500/20 dark:bg-sky-950/70 dark:text-sky-300 dark:border-sky-500'
-                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
-                        }`}
+                        className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3 border text-center transition ${isSelected
+                          ? 'border-sky-500 bg-sky-50/80 text-sky-700 shadow-sm ring-2 ring-sky-500/20 dark:bg-sky-950/70 dark:text-sky-300 dark:border-sky-500'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
+                          }`}
                       >
                         <Icon size={18} className={isSelected ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-500'} />
                         <span className="text-xs font-bold">{cat.label}</span>
@@ -2024,11 +2019,10 @@ function AddItem({
               <button
                 type="button"
                 onClick={() => setListingType('rent')}
-                className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 border text-center transition ${
-                  listingType === 'rent'
-                    ? 'border-teal-500 bg-teal-50/60 text-teal-900 shadow-sm ring-2 ring-teal-500/20 dark:bg-teal-950/40 dark:text-teal-200'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
-                }`}
+                className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 border text-center transition ${listingType === 'rent'
+                  ? 'border-teal-500 bg-teal-50/60 text-teal-900 shadow-sm ring-2 ring-teal-500/20 dark:bg-teal-950/40 dark:text-teal-200'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
+                  }`}
               >
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${listingType === 'rent' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
                   <Clock size={20} />
@@ -2040,11 +2034,10 @@ function AddItem({
               <button
                 type="button"
                 onClick={() => setListingType('sell')}
-                className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 border text-center transition ${
-                  listingType === 'sell'
-                    ? 'border-violet-500 bg-violet-50/60 text-violet-900 shadow-sm ring-2 ring-violet-500/20 dark:bg-violet-950/40 dark:text-violet-200'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
-                }`}
+                className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 border text-center transition ${listingType === 'sell'
+                  ? 'border-violet-500 bg-violet-50/60 text-violet-900 shadow-sm ring-2 ring-violet-500/20 dark:bg-violet-950/40 dark:text-violet-200'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800'
+                  }`}
               >
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${listingType === 'sell' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
                   <ShoppingBag size={20} />
@@ -2595,9 +2588,8 @@ function ProfilePage({
               <button
                 type="button"
                 onClick={() => setResidenceType('hosteller')}
-                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
-                  residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
+                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${residenceType === 'hosteller' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
               >
                 <Building2 size={15} />
                 Hosteller
@@ -2605,9 +2597,8 @@ function ProfilePage({
               <button
                 type="button"
                 onClick={() => setResidenceType('day_scholar')}
-                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${
-                  residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
+                className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg py-2 text-xs sm:text-sm font-bold transition ${residenceType === 'day_scholar' ? 'bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
               >
                 <MapPin size={15} />
                 Day Scholar
@@ -2632,7 +2623,7 @@ function ProfilePage({
                   </select>
                 </div>
                 <div>
-<div className="flex items-center justify-between mb-1.5"><label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label><span className="text-[11px] text-slate-400 dark:text-slate-500">Private</span></div>
+                  <div className="flex items-center justify-between mb-1.5"><label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Room number</label><span className="text-[11px] text-slate-400 dark:text-slate-500">Private</span></div>
                   <input
                     type="text"
                     placeholder="e.g. 204-B"
@@ -2684,13 +2675,12 @@ function ProfilePage({
 function StatusBadge({ status }: { status: RequestStatus }) {
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${
-        status === 'approved'
-          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
-          : status === 'rejected'
+      className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${status === 'approved'
+        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
+        : status === 'rejected'
           ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
           : 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400'
-      }`}
+        }`}
     >
       {status}
     </span>

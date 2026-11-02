@@ -360,9 +360,26 @@ BorrowRequestWithDetails = BorrowRequestRow & { equipment: { equipment_name }, b
 
 9. **Status values are closed sets**: Equipment: `available`, `borrowed`. Requests: `pending`, `approved`, `rejected`. Adding a new status requires DB CHECK constraint changes.
 
+10. **Branch-per-feature / Branch-per-issue workflow (MANDATORY)**: Whenever assigned to work on any feature, enhancement, or bug fix, **always create and switch to a separate dedicated branch** for that task first (e.g. `git checkout -b feature/<name>` or `git checkout -b fix/<issue>`) before writing any code or modifying any files. Never develop directly on `main` or the default branch.
+
 ---
 
 ## 9. Development Workflow
+
+### Git Branching Policy (MANDATORY)
+
+Before starting work on **ANY** feature, enhancement, bug fix, or issue:
+1. **Check repository status**: Ensure your workspace is clean and up-to-date with `main`.
+2. **Create and switch to a dedicated branch**:
+   ```bash
+   git checkout -b <branch-type>/<short-description>
+   # Examples:
+   # git checkout -b feature/otp-verification
+   # git checkout -b fix/equipment-status-toggle
+   # git checkout -b issue/123-profile-sync
+   ```
+3. **Never work directly on `main`**: All code edits, file additions, migrations, and commits for the feature or issue must be isolated to that branch.
+4. Only once the work is complete, tested, and requested should it be merged or submitted for review.
 
 ### Starting the Dev Environment
 
@@ -457,6 +474,7 @@ npm run dev          # Vite dev server on port 5173
 
 Before submitting any change, verify:
 
+- [ ] Created and worked on a dedicated feature/issue branch (never directly on `main`)
 - [ ] No `email` column referenced on `profiles` table
 - [ ] User-identity fields are server-enforced (`req.user.id`)
 - [ ] New routes follow the existing pattern: validation → auth check → DB operation → response
