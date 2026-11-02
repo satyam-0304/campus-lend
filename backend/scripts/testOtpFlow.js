@@ -50,3 +50,4 @@ console.log('5. Attempts after 5 failures:', attempts, '-> Locked out:', attempt
 console.assert(attempts >= 5, 'Must be locked out after 5 failed attempts');
 
 console.log('\n✅ All OTP security logic tests passed successfully!\n');
+
