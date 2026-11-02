@@ -25,7 +25,26 @@ router.get('/me', async (req, res) => {
   if (error || !data) {
     return res.status(404).json({ error: 'Profile not found' });
   }
-  res.json(data);
+  let isEmailVerified = Boolean(data.is_email_verified);
+  try {
+    const { data: verif } = await serviceClient
+      .from('user_otp_verifications')
+      .select('is_email_verified')
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+
+    if (verif?.is_email_verified) {
+      isEmailVerified = true;
+    }
+  } catch {
+    // Non-blocking if table is not yet migrated
+  }
+
+  res.json({
+    ...data,
+    is_email_verified: isEmailVerified,
+    isEmailVerified,
+  });
 });
 
 // ── PUT /me ───────────────────────────────────────────────────
@@ -90,7 +109,26 @@ router.put('/me', async (req, res) => {
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  let isEmailVerified = Boolean(data.is_email_verified);
+  try {
+    const { data: verif } = await serviceClient
+      .from('user_otp_verifications')
+      .select('is_email_verified')
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+
+    if (verif?.is_email_verified) {
+      isEmailVerified = true;
+    }
+  } catch {
+    // Non-blocking if table is not yet migrated
+  }
+
+  res.json({
+    ...data,
+    is_email_verified: isEmailVerified,
+    isEmailVerified,
+  });
 });
 
 module.exports = router;
