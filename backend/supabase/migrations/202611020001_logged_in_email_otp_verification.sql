@@ -31,3 +31,4 @@ DROP POLICY IF EXISTS "user_otp_verifications_update_own" ON public.user_otp_ver
 CREATE POLICY "user_otp_verifications_update_own" ON public.user_otp_verifications
   FOR UPDATE TO authenticated
   USING (auth.uid() = user_id);
+

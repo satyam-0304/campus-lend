@@ -33,9 +33,84 @@
         } catch (e) {}
       })();
     </script>
+    <style>
+      /* Zero-JS instant loading screen & skeleton */
+      .app-loader-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        width: 100%;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        text-align: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      html.dark, html.dark body {
+        background-color: #0b0f19;
+      }
+      html:not(.dark), html:not(.dark) body {
+        background-color: #f8fafc;
+      }
+      .dark .app-loader-container {
+        background-color: #0b0f19;
+        color: #f8fafc;
+      }
+      html:not(.dark) .app-loader-container {
+        background-color: #f8fafc;
+        color: #0f172a;
+      }
+      .app-loader-logo {
+        height: 56px;
+        width: 56px;
+        border-radius: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
+        animation: appPulse 1.8s ease-in-out infinite;
+        object-fit: cover;
+      }
+      .app-loader-title {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin: 0 0 6px 0;
+      }
+      .app-loader-title span {
+        color: #0284c7;
+      }
+      .app-loader-subtitle {
+        font-size: 13px;
+        margin: 0 0 24px 0;
+        opacity: 0.65;
+        font-weight: 500;
+      }
+      .app-loader-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid rgba(2, 132, 199, 0.15);
+        border-top-color: #0284c7;
+        border-radius: 50%;
+        animation: appSpin 0.75s linear infinite;
+      }
+      @keyframes appSpin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes appPulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(0.96); opacity: 0.85; }
+      }
+    </style>
 </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="app-loader-container">
+        <img src="/assets/images/logo.jpeg" alt="CampusLend" class="app-loader-logo" />
+        <h1 class="app-loader-title">Campus<span>Lend</span></h1>
+        <p class="app-loader-subtitle">Borrow what you need. Lend what you can.</p>
+        <div class="app-loader-spinner" role="status" aria-label="Loading CampusLend"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
