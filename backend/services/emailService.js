@@ -1,6 +1,7 @@
 'use strict';
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 let nodemailer;
 try {
   nodemailer = require('nodemailer');
@@ -15,7 +16,7 @@ function getTransporter() {
   if (!nodemailer) return null;
 
   const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || '465', 10);
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const user = process.env.SMTP_USER;
   const rawPass = process.env.SMTP_PASS;
   const pass = rawPass ? rawPass.replace(/\s+/g, '') : '';
@@ -27,7 +28,9 @@ function getTransporter() {
   // Optimize for Gmail (either explicit host, or user ends with @gmail.com)
   if (host === 'smtp.gmail.com' || (!host && user.endsWith('@gmail.com'))) {
     return nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: port || 587,
+      secure: port === 465,
       auth: { user, pass },
     });
   }

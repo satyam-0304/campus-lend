@@ -33,7 +33,10 @@ export function EmailOtpVerificationModal({
     let isMounted = true;
     (async () => {
       try {
-        await api.sendOtp(email);
+        const res = await api.sendOtp(email);
+        if (res?.devOtp && isMounted) {
+          setOtp(res.devOtp);
+        }
       } catch (err: any) {
         if (isMounted) setError(err?.message || 'Failed to send verification email');
       }
@@ -83,7 +86,8 @@ export function EmailOtpVerificationModal({
     setResending(true);
     setError('');
     try {
-      await api.sendOtp(email);
+      const res = await api.sendOtp(email);
+      if (res?.devOtp) setOtp(res.devOtp);
       setResendCooldown(30);
       showToast('New verification PIN sent to your email');
     } catch (err: any) {
@@ -133,7 +137,7 @@ export function EmailOtpVerificationModal({
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
               placeholder="••••••"
               autoFocus
-              className="w-full text-center tracking-[14px] text-2xl font-black rounded-2xl border border-slate-200 bg-slate-50 py-3.5 text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10 dark:border-slate-800 dark:bg-slate-800/80 dark:text-white"
+              className="w-full text-center tracking-[14px] text-2xl font-black rounded-2xl border border-slate-200 bg-slate-50 py-3.5 text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-sky-500 dark:focus:ring-sky-500/20"
             />
           </div>
 
