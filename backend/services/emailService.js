@@ -17,8 +17,8 @@ function getTransporter() {
 
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const user = process.env.SMTP_USER;
-  const rawPass = process.env.SMTP_PASS;
+  const user = process.env.EMAIL_USER || process.env.SMTP_USER;
+  const rawPass = process.env.EMAIL_APP_PASSWORD || process.env.SMTP_PASS;
   const pass = rawPass ? rawPass.replace(/\s+/g, '') : '';
 
   if (!user || !pass) {

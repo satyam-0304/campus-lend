@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Mail, Check, X, LoaderCircle, ArrowRight, RefreshCw, KeyRound } from 'lucide-react';
+import { Check, X, LoaderCircle, RefreshCw, KeyRound, ShieldAlert } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface EmailOtpVerificationModalProps {
   isOpen: boolean;
   email: string;
+  isLoggedInUser?: boolean;
   onClose: () => void;
   onVerified: () => void;
   showToast: (msg: string) => void;
@@ -13,6 +14,7 @@ interface EmailOtpVerificationModalProps {
 export function EmailOtpVerificationModal({
   isOpen,
   email,
+  isLoggedInUser = false,
   onClose,
   onVerified,
   showToast,
@@ -20,34 +22,46 @@ export function EmailOtpVerificationModal({
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(30);
+  const [resendCooldown, setResendCooldown] = useState(60);
   const [error, setError] = useState('');
 
   // Auto-send OTP when modal opens
   useEffect(() => {
-    if (!isOpen || !email) return;
+    if (!isOpen) return;
     setOtp('');
     setError('');
-    setResendCooldown(30);
+    setResendCooldown(60);
 
     let isMounted = true;
     (async () => {
       try {
-        const res = await api.sendOtp(email);
-        if (res?.devOtp && isMounted) {
-          setOtp(res.devOtp);
+        if (isLoggedInUser) {
+          const res = await api.sendUserOtp();
+          if (res?.devOtp && isMounted) {
+            setOtp(res.devOtp);
+          }
+          if (res?.cooldownSeconds && isMounted) {
+            setResendCooldown(res.cooldownSeconds);
+          }
+        } else if (email) {
+          const res = await api.sendOtp(email);
+          if (res?.devOtp && isMounted) {
+            setOtp(res.devOtp);
+          }
         }
       } catch (err: any) {
-        if (isMounted) setError(err?.message || 'Failed to send verification email');
+        if (isMounted) {
+          setError(err?.message || 'Failed to send verification email');
+        }
       }
     })();
 
     return () => {
       isMounted = false;
     };
-  }, [isOpen, email]);
+  }, [isOpen, email, isLoggedInUser]);
 
-  // Resend cooldown timer
+  // 60-second Resend countdown timer
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => setResendCooldown((c) => c - 1), 1000);
@@ -58,7 +72,8 @@ export function EmailOtpVerificationModal({
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otp.trim() || otp.trim().length !== 6) {
+    const cleanOtp = otp.trim();
+    if (!cleanOtp || cleanOtp.length !== 6) {
       setError('Please enter the 6-digit verification code');
       return;
     }
@@ -66,13 +81,24 @@ export function EmailOtpVerificationModal({
     setLoading(true);
     setError('');
     try {
-      const res = await api.verifyOtp(email, otp.trim());
-      if (res.verified) {
-        showToast('Email verified successfully! 🎉');
-        onVerified();
-        onClose();
+      if (isLoggedInUser) {
+        const res = await api.verifyUserOtp(cleanOtp);
+        if (res.isEmailVerified || res.success) {
+          showToast('Email verified successfully! 🎉');
+          onVerified();
+          onClose();
+        } else {
+          setError(res.message || 'Invalid verification code');
+        }
       } else {
-        setError(res.message || 'Invalid verification code');
+        const res = await api.verifyOtp(email, cleanOtp);
+        if (res.verified || res.success) {
+          showToast('Email verified successfully! 🎉');
+          onVerified();
+          onClose();
+        } else {
+          setError(res.message || 'Invalid verification code');
+        }
       }
     } catch (err: any) {
       setError(err?.message || 'Verification failed. Please check the code and retry.');
@@ -86,10 +112,16 @@ export function EmailOtpVerificationModal({
     setResending(true);
     setError('');
     try {
-      const res = await api.sendOtp(email);
-      if (res?.devOtp) setOtp(res.devOtp);
-      setResendCooldown(30);
-      showToast('New verification PIN sent to your email');
+      if (isLoggedInUser) {
+        const res = await api.sendUserOtp();
+        if (res?.devOtp) setOtp(res.devOtp);
+        setResendCooldown(res?.cooldownSeconds || 60);
+      } else {
+        const res = await api.sendOtp(email);
+        if (res?.devOtp) setOtp(res.devOtp);
+        setResendCooldown(60);
+      }
+      showToast('New verification PIN sent to your PEC email');
     } catch (err: any) {
       setError(err?.message || 'Could not resend verification email');
     } finally {
@@ -142,8 +174,9 @@ export function EmailOtpVerificationModal({
           </div>
 
           {error && (
-            <div className="rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
-              {error}
+            <div className="flex items-start gap-2 rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+              <ShieldAlert size={16} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -153,7 +186,7 @@ export function EmailOtpVerificationModal({
             className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 py-3 px-6 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 active:scale-95 disabled:opacity-50"
           >
             {loading ? <LoaderCircle size={18} className="animate-spin" /> : <Check size={18} />}
-            Confirm PIN & Activate
+            {loading ? 'Verifying PIN...' : 'Verify & Activate'}
           </button>
         </form>
 
@@ -162,9 +195,9 @@ export function EmailOtpVerificationModal({
             type="button"
             disabled={resendCooldown > 0 || resending}
             onClick={handleResend}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-sky-600 disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-400 disabled:opacity-50 transition"
           >
-            <RefreshCw size={12} className={resending ? 'animate-spin' : ''} />
+            <RefreshCw size={13} className={resending ? 'animate-spin' : ''} />
             {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend verification code'}
           </button>
         </div>

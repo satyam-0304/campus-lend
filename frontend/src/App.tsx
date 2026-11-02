@@ -152,9 +152,11 @@ function App() {
   const [otpModalState, setOtpModalState] = useState<{
     isOpen: boolean;
     email: string;
+    isLoggedInUser?: boolean;
   }>({
     isOpen: false,
     email: '',
+    isLoggedInUser: false,
   });
 
   const openAuth = (mode: 'login' | 'signup') => {
@@ -360,6 +362,33 @@ function App() {
         onLogout={handleLogout}
         initials={getInitials(safeProfile.full_name)}
       />
+
+      {/* Email Verification Banner for Logged-In Users */}
+      {session?.user && !safeProfile.is_email_verified && !safeProfile.isEmailVerified && (
+        <div className="border-b border-amber-200 bg-amber-50/90 px-4 py-2.5 text-xs sm:text-sm font-semibold text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200 transition-colors">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-2 sm:px-4">
+            <div className="flex items-center gap-2">
+              <Mail size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>
+                Please verify your official PEC email (<span className="font-bold underline">{session.user.email}</span>) to secure your account.
+              </span>
+            </div>
+            <button
+              onClick={() =>
+                setOtpModalState({
+                  isOpen: true,
+                  email: session.user.email || '',
+                  isLoggedInUser: true,
+                })
+              }
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1 text-xs font-bold text-white shadow-sm hover:bg-amber-700 active:scale-95 transition dark:bg-amber-500 dark:hover:bg-amber-600"
+            >
+              Verify Email Now
+              <ArrowRight size={13} />
+            </button>
+          </div>
+        </div>
+      )}
       <main className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-10 pb-16 pt-6 sm:pt-8">
         {page === 'explore' && (
           <Explore
@@ -414,6 +443,13 @@ function App() {
             setProfile={setProfile}
             showToast={showToast}
             userEmail={session.user.email}
+            onOpenVerify={() =>
+              setOtpModalState({
+                isOpen: true,
+                email: session.user.email || '',
+                isLoggedInUser: true,
+              })
+            }
           />
         )}
       </main>
@@ -463,9 +499,16 @@ function App() {
       <EmailOtpVerificationModal
         isOpen={otpModalState.isOpen}
         email={otpModalState.email}
+        isLoggedInUser={otpModalState.isLoggedInUser}
         onClose={() => setOtpModalState((s) => ({ ...s, isOpen: false }))}
-        onVerified={() => {
-          showToast('Email verified! You can now log in.');
+        onVerified={async () => {
+          if (session?.user) {
+            try {
+              const updated = await api.getMyProfile();
+              setProfile(updated);
+            } catch {}
+          }
+          showToast('Email verified successfully! 🎉');
         }}
         showToast={showToast}
       />
@@ -2451,11 +2494,13 @@ function ProfilePage({
   setProfile,
   showToast,
   userEmail,
+  onOpenVerify,
 }: {
   profile: Profile;
   setProfile: (p: Profile) => void;
   showToast: (msg: string) => void;
   userEmail?: string;
+  onOpenVerify?: () => void;
 }) {
   const parsed = useMemo(() => parsePecEmail(userEmail || ''), [userEmail]);
   const degree = profile.degree || parsed.degree || 'B.Tech';
@@ -2533,9 +2578,19 @@ function ProfilePage({
           <div>
             <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
               <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">{fullName || 'Your name'}</h2>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60">
-                PEC Verified
-              </span>
+              {(profile.is_email_verified || profile.isEmailVerified) ? (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60">
+                  PEC Verified
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenVerify}
+                  className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-700 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 hover:bg-amber-100 transition"
+                >
+                  Verify Email
+                </button>
+              )}
             </div>
             <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
               {degree} {branch} â€¢ Batch of {batchYear}

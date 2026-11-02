@@ -250,7 +250,36 @@ export const api = {
     });
   },
 
-  // ── Email OTP ───────────────────────────────────────────────
+  // ── Protected Logged-in User Email OTP ───────────────────────
+  async sendUserOtp(): Promise<{ success: boolean; message: string; cooldownSeconds?: number; devOtp?: string; isEmailVerified?: boolean }> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/auth/otp/send`, {
+      method: 'POST',
+      headers,
+    });
+    return handleResponse<{ success: boolean; message: string; cooldownSeconds?: number; devOtp?: string; isEmailVerified?: boolean }>(res);
+  },
+
+  async verifyUserOtp(otp: string): Promise<{ success: boolean; isEmailVerified: boolean; message: string }> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/auth/otp/verify`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ otp }),
+    });
+    return handleResponse<{ success: boolean; isEmailVerified: boolean; message: string }>(res);
+  },
+
+  async getUserOtpStatus(): Promise<{ isEmailVerified: boolean; email: string; cooldownRemaining?: number }> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/auth/otp/status`, {
+      method: 'GET',
+      headers,
+    });
+    return handleResponse<{ isEmailVerified: boolean; email: string; cooldownRemaining?: number }>(res);
+  },
+
+  // ── Public Email OTP (Signup) ─────────────────────────────────
   async sendOtp(email: string): Promise<{ success: boolean; message: string; devOtp?: string }> {
     const res = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
       method: 'POST',

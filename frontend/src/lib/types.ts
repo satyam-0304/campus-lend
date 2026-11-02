@@ -25,6 +25,8 @@ export type Profile = {
   residence_type?: ResidenceType | '';
   hostel_name?: string;
   address?: string;
+  is_email_verified?: boolean;
+  isEmailVerified?: boolean;
 };
 
 export type ListingType = 'sell' | 'rent';
