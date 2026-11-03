@@ -81,6 +81,41 @@ async function sendViaResend(toEmail, otpCode, htmlContent, textContent) {
 /**
  * Send 6-digit verification PIN to a PEC email
  */
+/**
+ * Send via Brevo REST API if BREVO_API_KEY is configured (HTTP port 443 - works on Render Free Tier without custom domain)
+ */
+async function sendViaBrevo(toEmail, otpCode, htmlContent, textContent) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return null;
+
+  const senderEmail = process.env.EMAIL_USER || process.env.BREVO_SENDER_EMAIL || 'kandpal.satyam2004@gmail.com';
+  const senderName = 'CampusLend';
+  const subject = `CampusLend Verification Code: ${otpCode}`;
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': apiKey,
+      'Content-Type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: senderName, email: senderEmail },
+      to: [{ email: toEmail }],
+      subject,
+      htmlContent,
+      textContent,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || `Brevo API error status ${response.status}`);
+  }
+  console.log(`[EmailService] OTP sent to ${toEmail} via Brevo HTTP API (${data?.messageId})`);
+  return { success: true, mode: 'brevo', id: data?.messageId };
+}
+
 async function sendOtpEmail(toEmail, otpCode) {
   const fromAddress = process.env.EMAIL_FROM || '"CampusLend" <no-reply@campuslend.pec.edu.in>';
   const subject = `CampusLend Verification Code: ${otpCode}`;
@@ -121,7 +156,17 @@ async function sendOtpEmail(toEmail, otpCode) {
     }
   }
 
-  // 2. Try SMTP if credentials are configured
+  // 2. Try Brevo if BREVO_API_KEY is configured (HTTPS port 443)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      return await sendViaBrevo(toEmail, otpCode, htmlContent, textContent);
+    } catch (err) {
+      console.error('[EmailService] Brevo failed:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 3. Try SMTP if credentials are configured
   const transporter = getTransporter();
   if (transporter) {
     try {
@@ -207,6 +252,28 @@ async function sendVerificationSuccessEmail(toEmail, recipientName = 'Student') 
     }
   }
 
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: "CampusLend", email: process.env.EMAIL_USER || "kandpal.satyam2004@gmail.com" },
+          to: [{ email: toEmail }],
+          subject,
+          htmlContent,
+          textContent,
+        }),
+      });
+      return { success: response.ok };
+    } catch (err) {
+      console.warn("[EmailService] Brevo success email error:", err.message);
+    }
+  }
   const transporter = getTransporter();
   if (transporter) {
     try {
