@@ -109,7 +109,7 @@ export function parsePecEmail(email: string): ParsedPecEmail {
       batchYear,
       branchCode,
       branchName,
-      academicSummary: `${degree} ${branchCode} • Batch of ${batchYear}`,
+      academicSummary: `${degree} ${branchCode}`,
     };
   }
 

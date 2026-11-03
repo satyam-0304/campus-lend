@@ -98,7 +98,7 @@ const categoryLabels: Record<Category, string> = {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const BUCKET = 'item-images';
 
-// â”€â”€ Supabase Storage upload helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Supabase Storage upload helper ─────────────────────────────
 async function uploadImageToStorage(file: File, userId: string): Promise<string> {
   const ext = file.name.split('.').pop() ?? 'jpg';
   const path = `${userId}/${Date.now()}.${ext}`;
@@ -214,7 +214,7 @@ function App() {
           setSession(data.session);
         }
       } catch {
-        /* getSession failed â€” session stays null, user sees landing page */
+        /* getSession failed — session stays null, user sees landing page */
       } finally {
         if (isMounted) setReady(true);
       }
@@ -243,7 +243,7 @@ function App() {
         const data = await api.getMyProfile();
         setProfile(data);
       } catch {
-        /* Profile fetch failed â€” stays null, show spinner until resolved */
+        /* Profile fetch failed — stays null, show spinner until resolved */
       } finally {
         setProfileLoading(false);
       }
@@ -280,9 +280,9 @@ function App() {
     if (!hasPhone || !hasSid || !hasResidence) {
       setPendingAction(action);
       setProfileModalOpen(true);
-      return false; // not complete â€” caller should abort
+      return false; // not complete — caller should abort
     }
-    return true; // complete â€” caller can proceed
+    return true; // complete — caller can proceed
   };
 
   // Called when ProfileCompletionModal saves successfully
@@ -334,13 +334,13 @@ function App() {
     );
   }
 
-  // Profile fetches in background â€” safeProfile fallback below handles the
+  // Profile fetches in background — safeProfile fallback below handles the
   // null case so we never block rendering on this network call.
   const userPecMeta = session?.user?.email ? parsePecEmail(session.user.email) : null;
 
   const userMeta = (session?.user?.user_metadata || {}) as Record<string, any>;
 
-  // profile can be null briefly â€” guard downstream components with profile!
+  // profile can be null briefly — guard downstream components with profile!
   const safeProfile: Profile = profile ?? {
     id: session.user.id,
     full_name: userMeta.full_name || userPecMeta?.formattedName || '',
@@ -515,7 +515,7 @@ function App() {
         showToast={showToast}
       />
 
-      {/* Profile completion modal â€” shown when room/phone not filled yet */}
+      {/* Profile completion modal — shown when room/phone not filled yet */}
       {profileModalOpen && (
         <ProfileCompletionModal
           profile={safeProfile}
@@ -544,7 +544,7 @@ function App() {
   );
 }
 
-// â”€â”€ Profile Completion Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Profile Completion Modal ────────────────────────────────────
 
 function ProfileCompletionModal({
   profile,
@@ -667,7 +667,7 @@ function ProfileCompletionModal({
               {degree} {branch}
             </p>
             <p className="text-xs text-sky-700 dark:text-sky-300 truncate">
-              Joining Batch {batchYear} â€¢ {userEmail || 'Verified PEC Student'}
+              {userEmail || 'Verified PEC Student'}
             </p>
           </div>
         </div>
@@ -790,7 +790,7 @@ function ProfileCompletionModal({
   );
 }
 
-// â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Auth ───────────────────────────────────────────────────
 
 function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -836,7 +836,7 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
         }
 
         if (data?.user) {
-          onSuccess('Account created â€” welcome to CampusLend');
+          onSuccess('Account created — welcome to CampusLend');
         } else {
           setError('Signup failed. Please try again.');
         }
@@ -853,7 +853,7 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
         onSuccess('Logged in');
       }
     } catch (err: any) {
-      setError(err?.message || 'Network error â€” please check your connection and try again.');
+      setError(err?.message || 'Network error — please check your connection and try again.');
     }
     setLoading(false);
   };
@@ -879,7 +879,7 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
           <form onSubmit={submit} className="mt-6 space-y-4">
             {mode === 'signup' && <Field label="Full name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} required />}
             <Field label="Email" type="email" placeholder="john@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Field label="Password" type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Field label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
             <button disabled={loading} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-70">
               {loading && <LoaderCircle size={17} className="animate-spin" />}
               {mode === 'login' ? 'Log in' : 'Create account'}
@@ -893,7 +893,7 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
   );
 }
 
-// â”€â”€ Navbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Navbar ─────────────────────────────────────────────────
 
 function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p: Page) => void; onLogout: () => void; initials: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -956,7 +956,7 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
   );
 }
 
-// â”€â”€ Explore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Explore ────────────────────────────────────────────────
 
 function Explore({
   userId,
@@ -999,7 +999,7 @@ function Explore({
       borrowed.forEach((r) => { map[r.equipment_id] = { status: r.status, requestId: r.request_id }; });
       setMyRequests(map);
     } catch {
-      /* Not critical â€” request status map stays empty */
+      /* Not critical — request status map stays empty */
     }
   }, [userId]);
 
@@ -1046,7 +1046,7 @@ function Explore({
     }
   };
 
-  // Do NOT block here â€” render the hero h1 + search UI immediately.
+  // Do NOT block here — render the hero h1 + search UI immediately.
   // The grid area below shows an inline spinner while items load.
 
   return (
@@ -1079,7 +1079,7 @@ function Explore({
         <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Available near you</h2>
         <span className="text-xs sm:text-sm font-semibold text-slate-400 dark:text-slate-500">{filtered.length} items</span>
       </div>
-      {/* Grid â€” shows inline spinner while loading so the hero above is already visible */}
+      {/* Grid — shows inline spinner while loading so the hero above is already visible */}
       {loading ? (
         <div className="flex justify-center py-20">
           <LoaderCircle size={28} className="animate-spin text-sky-400" />
@@ -1137,7 +1137,7 @@ function ItemCard({
 
   return (
     <>
-      {/* â”€â”€ Full-Screen Lightbox â”€â”€ */}
+      {/* ── Full-Screen Lightbox ── */}
       {lightboxOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
@@ -1236,7 +1236,7 @@ function ItemCard({
             </div>
           )}
 
-          {/* Front / Back switcher â€” only if back photo exists */}
+          {/* Front / Back switcher — only if back photo exists */}
           {hasBack && item.image_url && (
             <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center rounded-full bg-black/50 backdrop-blur-sm p-0.5 gap-0.5">
               <button
@@ -1325,7 +1325,7 @@ function ItemCard({
                 {item.status !== 'available'
                   ? (isSell ? 'Sold out' : 'Currently borrowed')
                   : requestStatus === 'approved'
-                    ? (isSell ? 'Purchased âœ“' : 'Approved âœ“')
+                    ? (isSell ? 'Purchased ✓' : 'Approved ✓')
                     : (isSell ? 'Buy this item' : 'Request to borrow')}
               </button>
             )}
@@ -1336,7 +1336,7 @@ function ItemCard({
   );
 }
 
-// â”€â”€ Image Upload Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Image Upload Component ──────────────────────────────────
 
 // Shared single-slot uploader used inside DualImageUploader
 function SingleSlotUploader({
@@ -1410,7 +1410,7 @@ function SingleSlotUploader({
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-slate-900/80">
               <LoaderCircle size={24} className={`animate-spin ${accentSpinner}`} />
-              <span className="ml-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Uploadingâ€¦</span>
+              <span className="ml-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Uploading…</span>
             </div>
           )}
           {!uploading && (
@@ -1446,7 +1446,7 @@ function SingleSlotUploader({
   );
 }
 
-// â”€â”€ Dual Image Uploader (Front + Back) with authenticity warning â”€â”€
+// ── Dual Image Uploader (Front + Back) with authenticity warning ──
 function DualImageUploader({
   onFrontUploaded,
   onBackUploaded,
@@ -1458,7 +1458,7 @@ function DualImageUploader({
 }) {
   return (
     <div className="space-y-4">
-      {/* âš ï¸ Legitimacy Warning Banner */}
+      {/* ⚠️ Legitimacy Warning Banner */}
       <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
         <div className="shrink-0 mt-0.5">
           <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400" />
@@ -1466,14 +1466,14 @@ function DualImageUploader({
         <div className="min-w-0">
           <p className="text-xs font-extrabold text-amber-800 dark:text-amber-300 mb-1">Upload genuine photos of your actual item</p>
           <ul className="space-y-0.5 text-[11px] text-amber-700 dark:text-amber-400/90 leading-relaxed">
-            <li>â€¢ Take real photos yourself â€” do <strong>not</strong> use stock images or brand catalogue photos.</li>
-            <li>â€¢ Both <strong>front</strong> and <strong>back</strong> views are required so borrowers can inspect wear, ports, labels, or any damage.</li>
-            <li>â€¢ Listings with misleading or downloaded images will be removed.</li>
+            <li>• Take real photos yourself — do <strong>not</strong> use stock images or brand catalogue photos.</li>
+            <li>• Both <strong>front</strong> and <strong>back</strong> views are required so borrowers can inspect wear, ports, labels, or any damage.</li>
+            <li>• Listings with misleading or downloaded images will be removed.</li>
           </ul>
         </div>
       </div>
 
-      {/* Two side-by-side upload slots â€” responsive grid */}
+      {/* Two side-by-side upload slots — responsive grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <SingleSlotUploader
           label="ðŸ“· Front View"
@@ -1494,7 +1494,7 @@ function DualImageUploader({
   );
 }
 
-// â”€â”€ Single Listing Card in "Your Listings" with Front/Back & Lightbox â”€â”€
+// ── Single Listing Card in "Your Listings" with Front/Back & Lightbox ──
 function MyListingCard({
   item,
   onDelete,
@@ -1662,17 +1662,17 @@ function MyListingCard({
                 <div className="flex flex-wrap gap-1 text-[11px]">
                   {item.rate_per_day != null && (
                     <span className="rounded bg-teal-50 border border-teal-100 px-1.5 py-0.5 text-teal-700 font-bold dark:bg-teal-950/50 dark:border-teal-900 dark:text-teal-300">
-                      â‚¹{item.rate_per_day}/day
+                      ₹{item.rate_per_day}/day
                     </span>
                   )}
                   {item.rate_per_month != null && (
                     <span className="rounded bg-sky-50 border border-sky-100 px-1.5 py-0.5 text-sky-700 font-bold dark:bg-sky-950/50 dark:border-sky-900 dark:text-sky-300">
-                      â‚¹{item.rate_per_month}/mo
+                      ₹{item.rate_per_month}/mo
                     </span>
                   )}
                   {item.rate_per_semester != null && (
                     <span className="rounded bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 text-indigo-700 font-bold dark:bg-indigo-950/50 dark:border-indigo-900 dark:text-indigo-300">
-                      â‚¹{item.rate_per_semester}/sem
+                      ₹{item.rate_per_semester}/sem
                     </span>
                   )}
                   {item.rate_per_day == null && item.rate_per_month == null && item.rate_per_semester == null && item.price_note && (
@@ -1700,7 +1700,7 @@ function MyListingCard({
   );
 }
 
-// â”€â”€ Add Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Add Item ───────────────────────────────────────────────
 
 function AddItem({
   ownerId,
@@ -1846,7 +1846,7 @@ function AddItem({
     if (listingType === 'sell') {
       const p = parseFloat(salePrice);
       if (!salePrice.trim() || isNaN(p) || p <= 0) {
-        setError('Please enter a valid selling price in â‚¹.');
+        setError('Please enter a valid selling price in ₹.');
         return;
       }
     } else {
@@ -1922,7 +1922,7 @@ function AddItem({
 
       {/* Main 2-Column Wide Form */}
       <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* â”€â”€ LEFT COLUMN: Basic Item Info & Photo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── LEFT COLUMN: Basic Item Info & Photo ─────────────────── */}
         <div className="lg:col-span-7 space-y-6">
           {/* Card: Item Details */}
           <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -2033,7 +2033,7 @@ function AddItem({
               </div>
               <div>
                 <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">2. Item Photos</h2>
-                <p className="text-xs text-slate-400 dark:text-slate-500">Front & back required â€” help peers inspect condition</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Front & back required — help peers inspect condition</p>
               </div>
             </div>
             <DualImageUploader
@@ -2045,7 +2045,7 @@ function AddItem({
 
         </div>
 
-        {/* â”€â”€ RIGHT COLUMN: Listing Type, Pricing & Live Preview â”€â”€â”€â”€â”€ */}
+        {/* ── RIGHT COLUMN: Listing Type, Pricing & Live Preview ───── */}
         <div className="lg:col-span-5 space-y-6">
           {/* Card: Listing Type & Pricing */}
           <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -2216,7 +2216,7 @@ function AddItem({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Free for 2 days, â‚¹50 refundable deposit"
+                    placeholder="e.g. Free for 2 days, ₹50 refundable deposit"
                     value={priceNote}
                     onChange={(e) => setPriceNote(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-medium outline-none placeholder:text-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:placeholder:text-slate-500"
@@ -2298,14 +2298,14 @@ function AddItem({
                 <div className="pt-1">
                   {listingType === 'sell' ? (
                     <div className="flex items-center gap-1 text-slate-900 dark:text-white font-extrabold text-sm">
-                      <IndianRupee size={13} />{salePrice || 'â€”'}
+                      <IndianRupee size={13} />{salePrice || '—'}
                       <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 ml-1">Buy now</span>
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-1 text-[11px]">
-                      {rateDay && <span className="rounded bg-teal-50 px-1.5 py-0.5 text-teal-700 font-bold dark:bg-teal-950/50 dark:text-teal-300">â‚¹{rateDay}/day</span>}
-                      {rateMonth && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700 font-bold dark:bg-sky-950/50 dark:text-sky-300">â‚¹{rateMonth}/mo</span>}
-                      {rateSemester && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 font-bold dark:bg-indigo-950/50 dark:text-indigo-300">â‚¹{rateSemester}/sem</span>}
+                      {rateDay && <span className="rounded bg-teal-50 px-1.5 py-0.5 text-teal-700 font-bold dark:bg-teal-950/50 dark:text-teal-300">₹{rateDay}/day</span>}
+                      {rateMonth && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700 font-bold dark:bg-sky-950/50 dark:text-sky-300">₹{rateMonth}/mo</span>}
+                      {rateSemester && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 font-bold dark:bg-indigo-950/50 dark:text-indigo-300">₹{rateSemester}/sem</span>}
                       {!rateDay && !rateMonth && !rateSemester && (
                         <span className="text-slate-400 dark:text-slate-500 text-xs italic">Set rental rates above</span>
                       )}
@@ -2335,7 +2335,7 @@ function AddItem({
         </div>
       </form>
 
-      {/* â”€â”€ My Listings Section (Wide Grid) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── My Listings Section (Wide Grid) ────────────────────────── */}
       <div className="mt-16 border-t border-slate-200/80 dark:border-slate-800 pt-10">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
@@ -2366,7 +2366,7 @@ function AddItem({
   );
 }
 
-// â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Dashboard ──────────────────────────────────────────────
 
 function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: string) => void }) {
   const [outgoing, setOutgoing] = useState<BorrowRequestWithDetails[]>([]);
@@ -2489,7 +2489,7 @@ function Dashboard({ userId, showToast }: { userId: string; showToast: (msg: str
   );
 }
 
-// â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Profile ────────────────────────────────────────────────
 
 function ProfilePage({
   profile,
@@ -2595,7 +2595,7 @@ function ProfilePage({
               )}
             </div>
             <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-              {degree} {branch} â€¢ Batch of {batchYear}
+              {degree} {branch}
             </p>
             {userEmail && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{userEmail}</p>}
           </div>
@@ -2727,7 +2727,7 @@ function ProfilePage({
   );
 }
 
-// â”€â”€ Shared bits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Shared bits ────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: RequestStatus }) {
   return (
