@@ -347,19 +347,22 @@ router.post('/send-otp', async (req, res) => {
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
   try {
-    await serviceClient
-      .from('email_verifications')
-      .upsert(
-        {
-          email: cleanEmail,
-          otp_code: otpCode,
-          expires_at: expiresAt,
-          verified: false,
-          created_at: new Date().toISOString(),
-        },
-        { onConflict: 'email' }
-      )
-      .catch(() => {});
+    try {
+      await serviceClient
+        .from('email_verifications')
+        .upsert(
+          {
+            email: cleanEmail,
+            otp_code: otpCode,
+            expires_at: expiresAt,
+            verified: false,
+            created_at: new Date().toISOString(),
+          },
+          { onConflict: 'email' }
+        );
+    } catch (upsertErr) {
+      console.warn('[authOtpRoutes] email_verifications table upsert notice:', upsertErr.message);
+    }
 
     const emailResult = await sendOtpEmail(cleanEmail, otpCode);
 
