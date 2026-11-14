@@ -26,6 +26,7 @@ import {
   Mail,
   MapPin,
   Menu,
+  MessageSquare,
   Minus,
   PackagePlus,
   Plus,
@@ -127,15 +128,19 @@ function App() {
 
   // Marketplace state
   const [selectedProduct, setSelectedProduct] = useState<EquipmentWithOwner | null>(null);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [chatState, setChatState] = useState<{
     isOpen: boolean;
-    recipientId: string;
-    recipientName: string;
+    view: 'list' | 'chat';
+    recipientId?: string;
+    recipientName?: string;
+    recipientLocation?: string;
     equipmentId?: string;
     equipmentName?: string;
     requestId?: string;
   }>({
     isOpen: false,
+    view: 'list',
     recipientId: '',
     recipientName: '',
   });
@@ -250,6 +255,26 @@ function App() {
     })();
   }, [session]);
 
+  // Poll unread chat message count across conversations
+  useEffect(() => {
+    if (!session?.user) {
+      setUnreadChatCount(0);
+      return;
+    }
+    const loadUnreadCount = async () => {
+      try {
+        const convs = await api.getConversations();
+        const total = (convs || []).reduce((acc, c) => acc + (c.unread_count || 0), 0);
+        setUnreadChatCount(total);
+      } catch {
+        // ignore
+      }
+    };
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 15000);
+    return () => clearInterval(interval);
+  }, [session?.user]);
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -362,6 +387,19 @@ function App() {
         setPage={setPage}
         onLogout={handleLogout}
         initials={getInitials(safeProfile.full_name)}
+        unreadChatCount={unreadChatCount}
+        onOpenMessages={() => setChatState({ isOpen: true, view: 'list' })}
+        onOpenChatFromNotification={(otherUserId, name, eqId, eqName, reqId) =>
+          setChatState({
+            isOpen: true,
+            view: 'chat',
+            recipientId: otherUserId,
+            recipientName: name,
+            equipmentId: eqId,
+            equipmentName: eqName,
+            requestId: reqId,
+          })
+        }
       />
 
       {/* Email Verification Banner for Logged-In Users */}
@@ -420,6 +458,7 @@ function App() {
             onOpenChat={(recipientId, recipientName, eqId, eqName, reqId) =>
               setChatState({
                 isOpen: true,
+                view: 'chat',
                 recipientId,
                 recipientName,
                 equipmentId: eqId,
@@ -466,6 +505,7 @@ function App() {
           setSelectedProduct(null);
           setChatState({
             isOpen: true,
+            view: 'chat',
             recipientId,
             recipientName,
             equipmentId,
@@ -479,11 +519,14 @@ function App() {
         isOpen={chatState.isOpen}
         onClose={() => setChatState((s) => ({ ...s, isOpen: false }))}
         currentUserId={session.user.id}
-        recipientId={chatState.recipientId}
-        recipientName={chatState.recipientName}
-        equipmentId={chatState.equipmentId}
-        equipmentName={chatState.equipmentName}
-        requestId={chatState.requestId}
+        initialRecipientId={chatState.recipientId}
+        initialRecipientName={chatState.recipientName}
+        initialRecipientLocation={chatState.recipientLocation}
+        initialEquipmentId={chatState.equipmentId}
+        initialEquipmentName={chatState.equipmentName}
+        initialRequestId={chatState.requestId}
+        initialView={chatState.view}
+        onUnreadCountChange={setUnreadChatCount}
       />
 
       {/* Transaction Review Modal */}
@@ -895,7 +938,29 @@ function AuthScreen({ onSuccess }: { onSuccess: (msg: string) => void }) {
 
 // ── Navbar ─────────────────────────────────────────────────
 
-function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p: Page) => void; onLogout: () => void; initials: string }) {
+function Navbar({
+  page,
+  setPage,
+  onLogout,
+  initials,
+  unreadChatCount = 0,
+  onOpenMessages,
+  onOpenChatFromNotification,
+}: {
+  page: Page;
+  setPage: (p: Page) => void;
+  onLogout: () => void;
+  initials: string;
+  unreadChatCount?: number;
+  onOpenMessages?: () => void;
+  onOpenChatFromNotification?: (
+    otherUserId: string,
+    name: string,
+    equipmentId?: string,
+    equipmentName?: string,
+    requestId?: string
+  ) => void;
+}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const links: { id: Page; label: string; icon: typeof Compass }[] = [
@@ -921,13 +986,49 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
         </nav>
         <div className="relative flex items-center gap-2 sm:gap-3">
           <ThemeToggle size="md" />
-          <NotificationPopover onNavigateToDashboard={() => setPage('dashboard')} />
+          {/* Chat Messages button */}
+          {onOpenMessages && (
+            <button
+              onClick={onOpenMessages}
+              className="relative rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition"
+              title="Messages"
+            >
+              <MessageSquare size={19} />
+              {unreadChatCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-sky-600 px-1 text-[10px] font-extrabold text-white shadow-sm animate-pulse">
+                  {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                </span>
+              )}
+            </button>
+          )}
+          <NotificationPopover
+            onNavigateToDashboard={() => setPage('dashboard')}
+            onOpenChat={onOpenChatFromNotification}
+          />
           <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-slate-50 p-1 sm:p-1.5 sm:pr-2.5 transition hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-xs font-extrabold text-sky-700 dark:bg-sky-950 dark:text-sky-300">{initials}</div>
             <ChevronDown size={15} className="text-slate-400 hidden sm:block" />
           </button>
           {userMenuOpen && (
-            <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="absolute right-0 top-12 z-50 w-48 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+              {onOpenMessages && (
+                <button
+                  onClick={() => {
+                    onOpenMessages();
+                    setUserMenuOpen(false);
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  <span className="flex items-center gap-2">
+                    <MessageSquare size={16} />Messages
+                  </span>
+                  {unreadChatCount > 0 && (
+                    <span className="rounded-full bg-sky-600 px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+                      {unreadChatCount}
+                    </span>
+                  )}
+                </button>
+              )}
               <button onClick={() => { setPage('profile'); setUserMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"><UserRound size={16} />Profile</button>
               <button onClick={onLogout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"><LogOut size={16} />Log out</button>
             </div>
@@ -942,6 +1043,24 @@ function Navbar({ page, setPage, onLogout, initials }: { page: Page; setPage: (p
               <Icon size={17} />{label}
             </button>
           ))}
+          {onOpenMessages && (
+            <button
+              onClick={() => {
+                onOpenMessages();
+                setMobileOpen(false);
+              }}
+              className="flex min-h-[44px] w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <div className="flex items-center gap-3">
+                <MessageSquare size={17} />Messages
+              </div>
+              {unreadChatCount > 0 && (
+                <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                  {unreadChatCount}
+                </span>
+              )}
+            </button>
+          )}
           <div className="my-1 border-t border-slate-100 dark:border-slate-800 pt-1">
             <button onClick={() => { setPage('profile'); setMobileOpen(false); }} className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold ${page === 'profile' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'}`}>
               <UserRound size={17} />Profile

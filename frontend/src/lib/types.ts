@@ -128,3 +128,17 @@ export type Notification = {
   is_read: boolean;
   created_at: string;
 };
+
+export type ConversationSummary = {
+  other_user_id: string;
+  other_user_name: string;
+  other_user_location?: string;
+  last_message: string;
+  last_message_time: string;
+  last_sender_id: string;
+  unread_count: number;
+  equipment_id?: string;
+  equipment_name?: string;
+  request_id?: string;
+};
+

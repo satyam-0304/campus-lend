@@ -301,7 +301,9 @@ export function ProductDetailModal({
                         <span className="font-extrabold text-slate-900 dark:text-white text-sm truncate">
                           {item.owner?.full_name || 'PEC Student'}
                         </span>
-                        <ShieldCheck size={14} className="text-sky-500 shrink-0" title="Verified PEC Domain" />
+                        <span title="Verified PEC Domain" className="inline-flex items-center">
+                          <ShieldCheck size={14} className="text-sky-500 shrink-0" />
+                        </span>
                       </div>
                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                         {item.owner?.hostel_name ? `${item.owner.hostel_name} · Room ${item.owner.room_number}` : `Room ${item.owner?.room_number || 'Campus'}`}
