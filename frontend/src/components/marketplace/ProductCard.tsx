@@ -222,7 +222,9 @@ export function ProductCard({
             <span className="truncate font-semibold text-slate-700 dark:text-slate-200">
               {item.owner?.full_name || 'PEC Student'}
             </span>
-            <ShieldCheck size={14} className="text-sky-500 shrink-0" title="Verified PEC Student" />
+            <span title="Verified PEC Student" className="inline-flex items-center">
+              <ShieldCheck size={14} className="text-sky-500 shrink-0" />
+            </span>
           </div>
           <span className="truncate text-[11px] text-slate-400 dark:text-slate-500 max-w-[45%] text-right">
             {locationText}

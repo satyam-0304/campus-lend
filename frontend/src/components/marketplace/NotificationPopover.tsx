@@ -5,9 +5,16 @@ import type { Notification } from '@/lib/types';
 
 interface NotificationPopoverProps {
   onNavigateToDashboard?: () => void;
+  onOpenChat?: (
+    otherUserId: string,
+    name: string,
+    equipmentId?: string,
+    equipmentName?: string,
+    requestId?: string
+  ) => void;
 }
 
-export function NotificationPopover({ onNavigateToDashboard }: NotificationPopoverProps) {
+export function NotificationPopover({ onNavigateToDashboard, onOpenChat }: NotificationPopoverProps) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -60,6 +67,24 @@ export function NotificationPopover({ onNavigateToDashboard }: NotificationPopov
       setUnreadCount((c) => Math.max(0, c - 1));
     }
     setOpen(false);
+
+    // If this is a direct chat notification, open the conversation directly
+    if (notif.link?.startsWith('chat:') && onOpenChat) {
+      try {
+        const withoutPrefix = notif.link.slice(5);
+        const [userId, queryString] = withoutPrefix.split('?');
+        const params = new URLSearchParams(queryString || '');
+        const name = params.get('name') || notif.title.replace('Message from ', '') || 'PEC Student';
+        const equipmentId = params.get('equipment_id') || undefined;
+        const requestId = params.get('request_id') || undefined;
+
+        onOpenChat(userId, name, equipmentId, undefined, requestId);
+        return;
+      } catch {
+        // Fallback to dashboard if parsing fails
+      }
+    }
+
     if (onNavigateToDashboard) onNavigateToDashboard();
   };
 

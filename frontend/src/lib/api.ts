@@ -8,6 +8,7 @@ import type {
   Review,
   Message,
   Notification,
+  ConversationSummary,
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -187,6 +188,14 @@ export const api = {
   },
 
   // ── Messages / Chat ─────────────────────────────────────────
+  async getConversations(): Promise<ConversationSummary[]> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/messages/conversations`, {
+      headers,
+    });
+    return handleResponse<ConversationSummary[]>(res);
+  },
+
   async getConversation(params: {
     other_user_id?: string;
     request_id?: string;
@@ -202,6 +211,16 @@ export const api = {
       headers,
     });
     return handleResponse<Message[]>(res);
+  },
+
+  async markMessagesAsRead(other_user_id: string): Promise<{ success: boolean }> {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/api/messages/read`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ other_user_id }),
+    });
+    return handleResponse<{ success: boolean }>(res);
   },
 
   async sendMessage(payload: {
