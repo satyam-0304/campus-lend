@@ -201,6 +201,13 @@ function App() {
           : 'Rental request sent to owner 🎉'
       );
     } catch (err: any) {
+      if (err?.message?.includes('verification') || err?.code === 'EMAIL_NOT_VERIFIED') {
+        setOtpModalState({
+          isOpen: true,
+          email: session?.user?.email || '',
+          isLoggedInUser: true,
+        });
+      }
       showToast(err?.message || 'Could not send request. Please try again.');
       throw err;
     }
@@ -295,6 +302,19 @@ function App() {
 
   // Called by Explore/AddItem to check if profile is complete before acting
   const requireProfile = (action: PendingAction): boolean => {
+    // 1. Strict Email OTP Verification Check
+    const isVerified = Boolean(profile?.is_email_verified || profile?.isEmailVerified);
+    if (!isVerified) {
+      setPendingAction(action);
+      setOtpModalState({
+        isOpen: true,
+        email: session?.user?.email || '',
+        isLoggedInUser: true,
+      });
+      showToast('Please verify your official PEC email with the 6-digit OTP first.');
+      return false; // not verified — abort action until OTP verification completes
+    }
+
     const hasPhone = Boolean(profile?.phone_number?.trim());
     const hasSid = Boolean(profile?.student_id && /^\d{8}$/.test(profile.student_id.trim()));
     const hasResidence =
@@ -1941,6 +1961,9 @@ function AddItem({
       setImageBackUrl('');
       setPreviewView('front');
     } catch (err: any) {
+      if (err?.message?.includes('verification') || err?.code === 'EMAIL_NOT_VERIFIED') {
+        showToast('Official PEC email verification required before listing items.');
+      }
       setError(err?.message || 'Failed to list item. Please ensure you are logged in.');
     } finally {
       setLoading(false);

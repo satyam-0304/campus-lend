@@ -4,8 +4,27 @@ const express = require('express');
 const router = express.Router();
 const { serviceClient } = require('../config/supabaseClient');
 const authMiddleware = require('../middleware/authMiddleware');
+const requireEmailVerified = require('../middleware/requireEmailVerified');
 
 const VALID_CATEGORIES = ['academics', 'electronics', 'sports', 'event_wear'];
+
+/**
+ * Validates that an image URL strictly originates from the authorized
+ * Supabase item-images storage bucket and has a valid image extension.
+ */
+function isValidItemImageUrl(urlStr) {
+  if (typeof urlStr !== 'string' || !urlStr.trim()) return false;
+  const trimmed = urlStr.trim();
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+    if (!parsed.pathname.includes('/item-images/')) return false;
+    if (!/\.(jpe?g|png|webp|avif)(\?.*)?$/i.test(parsed.pathname)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Public equipment select: does NOT expose room_number or phone_number
 const PUBLIC_EQUIPMENT_SELECT =
@@ -100,9 +119,10 @@ router.get('/mine', authMiddleware, async (req, res) => {
 
 // ── POST / ─────────────────────────────────────────────────────────
 // Protected. Adds a new item. owner_id is always forced to req.user.id.
+// Requires email OTP verification (requireEmailVerified).
 // image_url (front photo) is required; image_back_url (back photo) is required for new listings.
 // supports listing_type ('sell' | 'rent'), sale_price, rate_per_day, rate_per_month, rate_per_semester, quantity.
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, requireEmailVerified, async (req, res) => {
   const {
     equipment_name,
     category,
@@ -128,8 +148,18 @@ router.post('/', authMiddleware, async (req, res) => {
   if (!image_url || typeof image_url !== 'string' || !image_url.trim()) {
     return res.status(400).json({ error: 'Front photo is required — please upload an image of the item.' });
   }
+  if (!isValidItemImageUrl(image_url)) {
+    return res.status(400).json({
+      error: 'Front photo must be a valid image uploaded to the item-images storage bucket.',
+    });
+  }
   if (!image_back_url || typeof image_back_url !== 'string' || !image_back_url.trim()) {
     return res.status(400).json({ error: 'Back photo is required — please upload a back/reverse view of the item.' });
+  }
+  if (!isValidItemImageUrl(image_back_url)) {
+    return res.status(400).json({
+      error: 'Back photo must be a valid image uploaded to the item-images storage bucket.',
+    });
   }
 
   const normalizedListingType = listing_type === 'sell' ? 'sell' : 'rent';

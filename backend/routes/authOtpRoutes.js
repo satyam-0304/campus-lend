@@ -155,21 +155,10 @@ router.post('/otp/send', authMiddleware, async (req, res) => {
     const emailResult = await sendOtpEmail(cleanEmail, plainOtp);
 
     if (!emailResult.success) {
-      console.warn(`[authOtpRoutes Dev Warning] Outbound email failed: ${emailResult.error}`);
-      console.log(`[authOtpRoutes Dev Fallback] OTP for ${cleanEmail}: ${plainOtp}`);
-
-      const isDev = process.env.NODE_ENV !== 'production';
-      if (isDev) {
-        return res.json({
-          success: true,
-          message: 'Verification code generated (email service offline, code logged to terminal in dev mode)',
-          devOtp: plainOtp,
-          cooldownSeconds: 60,
-        });
-      }
+      console.warn(`[authOtpRoutes Warning] Outbound email failed: ${emailResult.error}`);
 
       return res.status(503).json({
-        error: emailResult.error || 'Failed to dispatch verification email. Please try again.',
+        error: emailResult.error || 'Failed to dispatch verification email. Please try again later.',
       });
     }
 
@@ -367,18 +356,10 @@ router.post('/send-otp', async (req, res) => {
     const emailResult = await sendOtpEmail(cleanEmail, otpCode);
 
     if (!emailResult.success) {
-      console.warn(`[authOtpRoutes Dev Warning] Outbound email failed: ${emailResult.error}`);
-      console.log(`[authOtpRoutes Dev Fallback] OTP for ${cleanEmail}: ${otpCode}`);
+      console.warn(`[authOtpRoutes Warning] Outbound email failed: ${emailResult.error}`);
 
-      if (process.env.NODE_ENV !== 'production') {
-        return res.json({
-          success: true,
-          message: 'Email service notice: OTP logged to server terminal (dev mode)',
-          devOtp: otpCode,
-        });
-      }
       return res.status(503).json({
-        error: emailResult.error || 'Failed to send verification email. Please check server email setup.',
+        error: emailResult.error || 'Failed to send verification email. Please try again later.',
       });
     }
 
