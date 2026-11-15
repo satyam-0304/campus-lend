@@ -1,24 +1,38 @@
 -- Migration: 202611150001_security_hardening.sql
--- Description: Locks down direct client modification of OTP and email verification status,
---              protects profiles.is_email_verified, and enforces user-scoped storage policies.
+-- Description: Creates user_otp_verifications table if missing, locks down direct client modification
+--              of OTP/email verification status, protects profiles.is_email_verified,
+--              and enforces user-scoped storage policies.
 
--- 1. Drop client UPDATE policy on user_otp_verifications so only serviceClient can verify accounts
+-- 1. Ensure is_email_verified column exists on public.profiles
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN NOT NULL DEFAULT false;
+
+-- 2. Create user_otp_verifications table if not already created
+CREATE TABLE IF NOT EXISTS public.user_otp_verifications (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  is_email_verified BOOLEAN NOT NULL DEFAULT false,
+  otp_hash TEXT,
+  otp_expires_at TIMESTAMPTZ,
+  otp_attempts INTEGER NOT NULL DEFAULT 0,
+  otp_last_sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 3. Enable Row Level Security (RLS)
+ALTER TABLE public.user_otp_verifications ENABLE ROW LEVEL SECURITY;
+
+-- 4. Drop direct client UPDATE policy so only backend serviceClient can verify accounts
 DROP POLICY IF EXISTS "user_otp_verifications_update_own" ON public.user_otp_verifications;
 
--- Ensure SELECT policy exists for users to check their own status
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'user_otp_verifications' AND policyname = 'user_otp_verifications_select_own'
-  ) THEN
-    CREATE POLICY "user_otp_verifications_select_own" ON public.user_otp_verifications
-      FOR SELECT TO authenticated
-      USING (auth.uid() = user_id);
-  END IF;
-END $$;
+-- 5. Ensure SELECT policy exists so logged-in users can check their own verification status
+DROP POLICY IF EXISTS "user_otp_verifications_select_own" ON public.user_otp_verifications;
+CREATE POLICY "user_otp_verifications_select_own" ON public.user_otp_verifications
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
 
--- 2. Database trigger preventing authenticated/anon roles from modifying is_email_verified directly on profiles
+-- 6. Database trigger preventing authenticated or anon roles from directly modifying is_email_verified on profiles
 CREATE OR REPLACE FUNCTION public.protect_email_verified_flag()
 RETURNS trigger AS $$
 BEGIN
@@ -35,7 +49,7 @@ CREATE TRIGGER trg_protect_email_verified
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.protect_email_verified_flag();
 
--- 3. Storage policies for item-images bucket (user-scoped folder uploads)
+-- 7. Enforce user-scoped folder upload policies on storage.objects for item-images bucket
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'storage' AND table_name = 'objects') THEN
@@ -64,5 +78,5 @@ EXCEPTION
     NULL;
 END $$;
 
--- 4. Notify PostgREST to reload schema
+-- 8. Reload PostgREST schema cache
 NOTIFY pgrst, 'reload schema';
