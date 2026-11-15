@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { serviceClient } = require('../config/supabaseClient');
 const authMiddleware = require('../middleware/authMiddleware');
+const requireEmailVerified = require('../middleware/requireEmailVerified');
 
 // All request routes are protected
 router.use(authMiddleware);
@@ -87,8 +88,9 @@ router.get('/dashboard', async (req, res) => {
 
 // ── POST / ──────────────────────────────────────────────────────────
 // Protected. Creates a borrow or purchase request.
+// Requires email OTP verification (requireEmailVerified).
 // Enforces: borrower_id = req.user.id, borrower ≠ owner, equipment must be available.
-router.post('/', async (req, res) => {
+router.post('/', requireEmailVerified, async (req, res) => {
   const {
     equipment_id,
     owner_id,
